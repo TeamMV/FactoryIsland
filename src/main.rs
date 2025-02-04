@@ -25,7 +25,7 @@ fn main() {
         info.fps = 60;
         info.ups = 20;
         info.vsync = true;
-        info.fullscreen = true;
+        //info.fullscreen = true;
 
         let window = Window::new(info);
         window.run::<GameLoop>().expect("Idk mve failed ig");

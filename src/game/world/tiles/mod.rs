@@ -1,5 +1,6 @@
 pub mod reg;
 
+use bytebuffer::ByteBuffer;
 use mvutils::save::{Loader, Savable, Saver};
 use mvutils::Savable;
 pub use reg::*;

@@ -13,9 +13,9 @@ dependencies = [
  "log",
  "mvengine",
  "mvengine-proc-macro",
- "mvlogger",
+ "mvlogger 0.3.0",
  "mvsync",
- "mvutils 1.1.7",
+ "mvutils 1.1.8",
  "noise",
  "num-traits 0.2.19",
  "parking_lot",
@@ -855,9 +855,9 @@ dependencies = [
  "itertools 0.14.0",
  "log",
  "mvengine-proc-macro",
- "mvlogger",
+ "mvlogger 0.4.0",
  "mvsync",
- "mvutils 1.1.7",
+ "mvutils 1.1.8",
  "num-traits 0.2.19",
  "openal",
  "parking_lot",
@@ -870,7 +870,7 @@ name = "mvengine-proc-macro"
 version = "1.0.0"
 dependencies = [
  "mvengine-ui-parsing",
- "mvutils 1.1.7",
+ "mvutils 1.1.8",
  "proc-macro2",
  "quote",
  "syn",
@@ -880,7 +880,7 @@ dependencies = [
 name = "mvengine-ui-parsing"
 version = "1.0.0"
 dependencies = [
- "mvutils 1.1.7",
+ "mvutils 1.1.8",
 ]
 
 [[package]]
@@ -891,6 +891,16 @@ checksum = "3885ebc4d7c9fc1cbd2c299fdf7f44c11ad40af0a00ec708e2f9c85290a906e2"
 dependencies = [
  "log",
  "mvutils 0.5.7",
+]
+
+[[package]]
+name = "mvlogger"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "106ce56e99c777a1c4b83b3110588e3496cdb3dac63cdd4959d8643c378bcf55"
+dependencies = [
+ "log",
+ "mvutils 1.1.8",
 ]
 
 [[package]]
@@ -931,9 +941,9 @@ dependencies = [
 
 [[package]]
 name = "mvutils"
-version = "1.1.7"
+version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c239b8a5545eded0b29116349e877b4b17283d9a157ad78924049176c4485e69"
+checksum = "b8361c29495515061815f52034e4d1fd4962e8dec8cb9fbc4e56cc34d8693407"
 dependencies = [
  "bytebuffer",
  "hashbrown 0.15.2",

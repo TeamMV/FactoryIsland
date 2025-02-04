@@ -1,5 +1,4 @@
 use crate::game::camera::Camera;
-use crate::game::event::EventDispatcher;
 use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
 use crate::game::world::tiles::{Tile, TILE_SIZE};
 use crate::game::world::World;
@@ -15,7 +14,8 @@ use mvengine::rendering::light::{Light, LightOpenGLRenderer};
 use mvengine::rendering::post::{OpenGLPostProcessRenderer, OpenGLPostProcessShader};
 use mvengine::rendering::shader::light::LightOpenGLShader;
 use mvengine::window::Window;
-use std::ops::Mul;
+use mvutils::unsafe_utils::Unsafe;
+use crate::game::events::{LmaoEnum, LmaoEnumDispatcher};
 
 pub struct WorldScreen {
     enabled: bool,
@@ -31,10 +31,12 @@ pub struct WorldScreen {
     camera: Camera,
 
     frame: f32,
+
+    events: &'static mut LmaoEnumDispatcher
 }
 
 impl WorldScreen {
-    pub fn new(window: &Window, world: World) -> Self {
+    pub fn new(window: &Window, world: World, events: &mut LmaoEnumDispatcher) -> Self {
         unsafe {
             LightOpenGLRenderer::prepare(window);
             let mut renderer = LightOpenGLRenderer::initialize(window);
@@ -77,28 +79,29 @@ impl WorldScreen {
                 world,
                 camera,
                 frame: 0.0,
+                events: unsafe { Unsafe::cast_mut_static(events) },
             }
         }
     }
 
-    pub fn draw(&mut self, window: &Window, event_dispatcher: &mut EventDispatcher) {
+    pub fn draw(&mut self, window: &Window) {
         let input = &window.input;
 
         if input.is_action("move_up") {
             self.camera.move_rel(0.0, -0.5);
-            self.world.on_cam_move(&self.camera, event_dispatcher);
+            self.world.on_cam_move(&self.camera, self.events);
         }
         if input.is_action("move_down") {
             self.camera.move_rel(0.0, 0.5);
-            self.world.on_cam_move(&self.camera, event_dispatcher);
+            self.world.on_cam_move(&self.camera, self.events);
         }
         if input.is_action("move_left") {
             self.camera.move_rel(0.5, 0.0);
-            self.world.on_cam_move(&self.camera, event_dispatcher);
+            self.world.on_cam_move(&self.camera, self.events);
         }
         if input.is_action("move_right") {
             self.camera.move_rel(-0.5, 0.0);
-            self.world.on_cam_move(&self.camera, event_dispatcher);
+            self.world.on_cam_move(&self.camera, self.events);
         }
 
         self.shader.use_program();
@@ -117,6 +120,10 @@ impl WorldScreen {
         self.post_renderer.draw_to_screen();
 
         self.frame += 0.003;
+    }
+
+    pub fn load_chunk(&mut self, rx: i32, rz: i32) {
+        self.world.load_chunk(rx, rz);
     }
 
     pub fn resize(&mut self, window: &Window) {

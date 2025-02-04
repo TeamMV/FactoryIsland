@@ -14,18 +14,18 @@ use mvutils::once::CreateOnce;
 use std::ops::Deref;
 use std::sync::Arc;
 use parking_lot::Mutex;
-use crate::game::event::EventDispatcher;
+use crate::game::events::{ChunkLoadEvent, LmaoEnum, LmaoEnumDispatcher, LmaoEnumHandler};
 
 pub struct GameLoop {
     world_screen: CreateOnce<Arc<Mutex<WorldScreen>>>,
-    event_dispatcher: EventDispatcher
+    events: LmaoEnumDispatcher,
 }
 
 impl WindowCallbacks for GameLoop {
     fn new(window: UninitializedWindow) -> Self {
         Self {
             world_screen: CreateOnce::new(),
-            event_dispatcher: EventDispatcher::new(Box::new(|_| {})),
+            events: LmaoEnumDispatcher::new(),
         }
     }
 
@@ -45,14 +45,24 @@ impl WindowCallbacks for GameLoop {
         registry.bind_action("move_left", vec![RawInput::KeyPress(Key::A)]);
         registry.bind_action("move_right", vec![RawInput::KeyPress(Key::D)]);
 
+        registry.create_action("fullscreen");
+        registry.bind_action("fullscreen", vec![RawInput::KeyPress(Key::F11)]);
+
         let world = World::create("helloseed");
-        let screen = WorldScreen::new(window, world);
+        let screen = WorldScreen::new(window, world, &mut self.events);
 
         let arc = Arc::new(Mutex::new(screen));
 
         window.input.register_new_event_target(arc.clone());
 
         self.world_screen.create(|| arc);
+
+        // self.events.add_event_handler(Box::new(|event, mut handle| {
+        //     if let LmaoEnum::ChunkLoad(x, z) = event {
+        //         println!("Loaded Chunk {x}, {z}!, But stopped it now!");
+        //         handle.pause();
+        //     }
+        // }))
     }
 
     fn update(&mut self, window: &mut Window, delta_t: f64) {
@@ -61,11 +71,25 @@ impl WindowCallbacks for GameLoop {
 
     fn draw(&mut self, window: &mut Window, delta_t: f64) {
         unsafe {
+            for event in self.events.poll() {
+                match event {
+                    LmaoEnum::ChunkLoad(event) => {
+                        if event.cancelled { continue; }
+                        let mut lock = self.world_screen.lock();
+                        lock.load_chunk(event.x, event.z);
+                    }
+                }
+            }
+
             let mut lock = self.world_screen.lock();
-            lock.draw(window, &mut self.event_dispatcher);
+            lock.draw(window);
             drop(lock);
 
             TIMING_MANAGER.post_frame(delta_t as f32, 0);
+        }
+
+        if window.input.was_action("fullscreen") {
+            window.toggle_fullscreen();
         }
     }
 

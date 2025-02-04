@@ -1,5 +1,4 @@
 use crate::game::camera::Camera;
-use crate::game::event::EventDispatcher;
 use crate::game::world::chunk::{Chunk, TilePos, CHUNK_SIZE, RENDER_DISTANCE};
 use crate::game::world::generator::default_generator;
 use crate::game::world::save::{ChunkSaver, ChunkSaverThread, ChunkTask};
@@ -12,6 +11,7 @@ use mvutils::unsafe_utils::Unsafe;
 use parking_lot::Mutex;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::sync::Arc;
+use crate::game::events::{ChunkLoadEvent, LmaoEnum, LmaoEnumDispatcher};
 
 pub mod tiles;
 pub mod chunk;
@@ -134,7 +134,7 @@ impl World {
         }
     }
 
-    pub fn on_cam_move(&mut self, camera: &Camera, event_dispatcher: &mut EventDispatcher) {
+    pub fn on_cam_move(&mut self, camera: &Camera, event_dispatcher: &mut LmaoEnumDispatcher) {
         let this = unsafe { Unsafe::cast_mut_static(self) };
 
         let nearest_chunk_x = -(camera.x / CHUNK_SIZE as f64).floor() as i32;
@@ -167,8 +167,12 @@ impl World {
                 let guard = self.loading_chunks.lock();
                 if !guard.contains(&(rx, rz)) {
                     drop(guard);
-                    self.load_chunk(rx, rz);
-                    //event_dispatcher.dispatch(GameEvent::ChunkLoad(ChunkLoadEvent { chunk_x: rx, chunk_z: rz }));
+                    //self.load_chunk(rx, rz);
+                    event_dispatcher.dispatch(LmaoEnum::ChunkLoad(ChunkLoadEvent {
+                        x: rx,
+                        z: rz,
+                        cancelled: false,
+                    }));
                 } else {
                     drop(guard);
                 }
