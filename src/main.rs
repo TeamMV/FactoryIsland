@@ -53,16 +53,6 @@ fn main() {
         info.vsync = true;
         //info.fullscreen = true;
 
-        let mut ecs = ECS::new();
-        ecs.world().create_entity::<PlayerBehavior, (BlockHealth)>(Entity::new);
-
-        ecs.world_mut().update();
-
-        let mut damage_fog = System::<(BlockHealth,)>::new(ecs.storage());
-        for (entity, health) in damage_fog.iter_mut() {
-            health.health -= 1.0;
-        }
-
         let window = Window::new(info);
         window.run::<GameLoop>().expect("Idk mve failed ig");
     }

@@ -1,20 +1,18 @@
+use crate::game::events::{Event, LmaoEnumDispatcher};
 use crate::game::screens::world::WorldScreen;
-use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
-use crate::game::world::tiles::Tile;
 use crate::game::world::World;
 use crate::res::R;
 use crate::WINDOW_SIZE;
-use mvengine::input::consts::{Key, MouseButton};
-use mvengine::input::registry::{Direction, RawInput};
-use mvengine::input::{Input, MouseAction, RawInputEvent};
+use mvengine::input::consts::Key;
+use mvengine::input::registry::RawInput;
 use mvengine::ui::timing::TIMING_MANAGER;
 use mvengine::window::app::WindowCallbacks;
 use mvengine::window::{UninitializedWindow, Window};
 use mvutils::once::CreateOnce;
+use parking_lot::Mutex;
 use std::ops::Deref;
 use std::sync::Arc;
-use parking_lot::Mutex;
-use crate::game::events::{ChunkLoadEvent, LmaoEnum, LmaoEnumDispatcher, LmaoEnumHandler};
+use mvengine::rendering::OpenGLRenderer;
 
 pub struct GameLoop {
     world_screen: CreateOnce<Arc<Mutex<WorldScreen>>>,
@@ -47,6 +45,8 @@ impl WindowCallbacks for GameLoop {
 
         registry.create_action("fullscreen");
         registry.bind_action("fullscreen", vec![RawInput::KeyPress(Key::F11)]);
+        registry.create_action("debug");
+        registry.bind_action("debug", vec![RawInput::KeyPress(Key::F3)]);
 
         let world = World::create("helloseed");
         let screen = WorldScreen::new(window, world, &mut self.events);
@@ -73,13 +73,15 @@ impl WindowCallbacks for GameLoop {
         unsafe {
             for event in self.events.poll() {
                 match event {
-                    LmaoEnum::ChunkLoad(event) => {
+                    Event::ChunkLoad(event) => {
                         if event.cancelled { continue; }
                         let mut lock = self.world_screen.lock();
                         lock.load_chunk(event.x, event.z);
                     }
                 }
             }
+
+            OpenGLRenderer::clear();
 
             let mut lock = self.world_screen.lock();
             lock.draw(window);

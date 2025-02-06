@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-pub enum LmaoEnum {
+pub enum Event {
     ChunkLoad(ChunkLoadEvent),
 }
 
@@ -13,12 +13,12 @@ pub struct ChunkLoadEvent {
 // Generated
 
 pub trait LmaoEnumHandler {
-    fn filter(&self, event: &mut LmaoEnum) -> bool { true }
+    fn filter(&self, event: &mut Event) -> bool { true }
 
-    fn handle(&mut self, event: &mut LmaoEnum) {
+    fn handle(&mut self, event: &mut Event) {
         if !self.filter(event) { return; }
         match event {
-            LmaoEnum::ChunkLoad(event) => self.handle_chunk_load(event),
+            Event::ChunkLoad(event) => self.handle_chunk_load(event),
         }
     }
 
@@ -27,7 +27,7 @@ pub trait LmaoEnumHandler {
 
 pub struct LmaoEnumDispatcher {
     handlers: Vec<Box<dyn LmaoEnumHandler>>,
-    queue: VecDeque<LmaoEnum>
+    queue: VecDeque<Event>
 }
 
 impl LmaoEnumDispatcher {
@@ -35,13 +35,13 @@ impl LmaoEnumDispatcher {
         Self { handlers: vec![], queue: VecDeque::new() }
     }
 
-    pub fn dispatch(&mut self, event: LmaoEnum) {
+    pub fn dispatch(&mut self, event: Event) {
         self.queue.push_back(event);
         let event = self.queue.back_mut().expect("Element must exist as it was just pushed");
         self.handlers.iter_mut().for_each(|handler| handler.handle(event));
     }
 
-    pub fn poll(&mut self) -> impl Iterator<Item=LmaoEnum> + use<'_> {
+    pub fn poll(&mut self) -> impl Iterator<Item=Event> + use<'_> {
         self.queue.drain(..)
     }
 

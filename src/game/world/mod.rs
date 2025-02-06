@@ -11,7 +11,7 @@ use mvutils::unsafe_utils::Unsafe;
 use parking_lot::Mutex;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::sync::Arc;
-use crate::game::events::{ChunkLoadEvent, LmaoEnum, LmaoEnumDispatcher};
+use crate::game::events::{ChunkLoadEvent, Event, LmaoEnumDispatcher};
 
 pub mod tiles;
 pub mod chunk;
@@ -168,7 +168,7 @@ impl World {
                 if !guard.contains(&(rx, rz)) {
                     drop(guard);
                     //self.load_chunk(rx, rz);
-                    event_dispatcher.dispatch(LmaoEnum::ChunkLoad(ChunkLoadEvent {
+                    event_dispatcher.dispatch(Event::ChunkLoad(ChunkLoadEvent {
                         x: rx,
                         z: rz,
                         cancelled: false,

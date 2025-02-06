@@ -1,4 +1,6 @@
 use crate::game::camera::Camera;
+use crate::game::events::LmaoEnumDispatcher;
+use crate::game::screens::debug::DebugScreen;
 use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
 use crate::game::world::tiles::{Tile, TILE_SIZE};
 use crate::game::world::World;
@@ -15,7 +17,7 @@ use mvengine::rendering::post::{OpenGLPostProcessRenderer, OpenGLPostProcessShad
 use mvengine::rendering::shader::light::LightOpenGLShader;
 use mvengine::window::Window;
 use mvutils::unsafe_utils::Unsafe;
-use crate::game::events::{LmaoEnum, LmaoEnumDispatcher};
+use crate::game::screens::entity::EntityScreen;
 
 pub struct WorldScreen {
     enabled: bool,
@@ -32,7 +34,11 @@ pub struct WorldScreen {
 
     frame: f32,
 
-    events: &'static mut LmaoEnumDispatcher
+    events: &'static mut LmaoEnumDispatcher,
+
+    debug: DebugScreen,
+    is_debug: bool,
+    entities: EntityScreen,
 }
 
 impl WorldScreen {
@@ -40,14 +46,6 @@ impl WorldScreen {
         unsafe {
             LightOpenGLRenderer::prepare(window);
             let mut renderer = LightOpenGLRenderer::initialize(window);
-            renderer.push_light(Light {
-                pos: Vec2::new(300.0, 300.0),
-                color: RgbColor::red().as_vec4(),
-                intensity: 1.2,
-                range: 200.0,
-                falloff: 1.8,
-            });
-
             renderer.set_ambient(RgbColor::white().as_vec4());
 
             let mut shader = LightOpenGLShader::new();
@@ -80,6 +78,9 @@ impl WorldScreen {
                 camera,
                 frame: 0.0,
                 events: unsafe { Unsafe::cast_mut_static(events) },
+                debug: DebugScreen::new(window),
+                is_debug: false,
+                entities: EntityScreen::new(),
             }
         }
     }
@@ -119,6 +120,19 @@ impl WorldScreen {
         self.post_renderer.run_shader(&mut self.clouds);
         self.post_renderer.draw_to_screen();
 
+        self.shader.use_program();
+        self.entities.draw(&mut self.controller, window, &self.camera);
+        self.controller.draw(window, &self.mv_camera, &mut self.renderer, &mut self.shader);
+
+
+        if window.input.was_action("debug") {
+            self.is_debug ^= true;
+        }
+
+        if self.is_debug {
+            self.debug.draw(window, &self.camera);
+        }
+
         self.frame += 0.003;
     }
 
@@ -141,6 +155,8 @@ impl WorldScreen {
             });
 
             self.renderer.set_ambient(RgbColor::white().as_vec4());
+
+            self.debug = DebugScreen::new(window);
         }
     }
 }
