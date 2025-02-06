@@ -879,9 +879,6 @@ dependencies = [
 [[package]]
 name = "mvengine-ui-parsing"
 version = "1.0.0"
-dependencies = [
- "mvutils 1.1.8",
-]
 
 [[package]]
 name = "mvlogger"
