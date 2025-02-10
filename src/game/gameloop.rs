@@ -1,4 +1,4 @@
-use crate::game::events::{Event, LmaoEnumDispatcher};
+use crate::game::events::{Event, EventDispatcher};
 use crate::game::screens::world::WorldScreen;
 use crate::game::world::World;
 use crate::res::R;
@@ -13,17 +13,18 @@ use parking_lot::Mutex;
 use std::ops::Deref;
 use std::sync::Arc;
 use mvengine::rendering::OpenGLRenderer;
+use mvutils::unsafe_utils::Unsafe;
 
 pub struct GameLoop {
     world_screen: CreateOnce<Arc<Mutex<WorldScreen>>>,
-    events: LmaoEnumDispatcher,
+    events: EventDispatcher<'static>,
 }
 
 impl WindowCallbacks for GameLoop {
     fn new(window: UninitializedWindow) -> Self {
         Self {
             world_screen: CreateOnce::new(),
-            events: LmaoEnumDispatcher::new(),
+            events: EventDispatcher::new(),
         }
     }
 
@@ -49,7 +50,8 @@ impl WindowCallbacks for GameLoop {
         registry.bind_action("debug", vec![RawInput::KeyPress(Key::F3)]);
 
         let world = World::create("helloseed");
-        let screen = WorldScreen::new(window, world, &mut self.events);
+        let static_events = unsafe { Unsafe::cast_mut_static(&mut self.events) };
+        let screen = WorldScreen::new(window, world, static_events);
 
         let arc = Arc::new(Mutex::new(screen));
 
@@ -71,13 +73,14 @@ impl WindowCallbacks for GameLoop {
 
     fn draw(&mut self, window: &mut Window, delta_t: f64) {
         unsafe {
-            for event in self.events.poll() {
+            for (dispatcher, event) in self.events.pump() {
                 match event {
                     Event::ChunkLoad(event) => {
                         if event.cancelled { continue; }
                         let mut lock = self.world_screen.lock();
-                        lock.load_chunk(event.x, event.z);
+                        lock.world_mut().load_chunk(event.x, event.z, dispatcher);
                     }
+                    Event::ChunkGenerate(event) => {}
                 }
             }
 

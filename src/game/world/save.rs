@@ -36,7 +36,7 @@ impl ChunkSaver {
         error!("failed to create or open file: {:?} in {:?}", file, full);
     }
 
-    pub fn load_chunk(&self, cx: i32, cy: i32, seed: u32) -> Chunk {
+    pub fn load_chunk(&self, cx: i32, cy: i32, seed: u32) -> Option<Chunk> {
         let appdata = env::var("APPDATA").expect("Failed to get APPDATA environment variable");
         let mut full = PathBuf::from(appdata);
         full.push(CONFIGURATION_PATH);
@@ -46,26 +46,27 @@ impl ChunkSaver {
 
         let mut file = File::options().read(true).open(&full);
         if let Err(_) = file {
-            return Chunk::new(cx, cy, seed);
+            return None;
         }
         if let Ok(mut file) = file {
             let mut buffer = Vec::new();
             if let Err(_) = file.read_to_end(&mut buffer) {
-                return Chunk::new(cx, cy, seed);
+                return None;
             }
             let mut buffer = ByteBuffer::from(buffer);
-            return Chunk::load(&mut buffer).unwrap_or(Chunk::new(cx, cy, seed));
+            return Some(Chunk::load(&mut buffer).unwrap_or(Chunk::new(cx, cy, seed)));
         }
         unreachable!()
     }
 }
 
 pub enum ChunkTask {
-    Load(i32, i32, u32, Box<dyn FnOnce(Chunk) + Send + 'static>),
+    Load(i32, i32, u32, Box<dyn FnOnce(Option<Chunk>) + Send + 'static>),
     Save(Chunk),
 }
 
 pub struct ChunkSaverThread {
+    saver: ChunkSaver,
     sender: Sender<ChunkTask>,
     handle: Option<JoinHandle<()>>,
 }
@@ -92,6 +93,7 @@ impl ChunkSaverThread {
         });
 
         Self {
+            saver: ChunkSaver,
             sender,
             handle: Some(handle),
         }
@@ -99,6 +101,14 @@ impl ChunkSaverThread {
 
     pub fn request(&self, task: ChunkTask) {
         self.sender.send(task).expect("Failed to send task");
+    }
+
+    pub fn load_now(&self, rx: i32, rz: i32, seed: u32) -> Option<Chunk> {
+        self.saver.load_chunk(rx, rz, seed)
+    }
+
+    pub fn save_now(&self, chunk: Chunk) {
+        self.saver.save_chunk(chunk);
     }
 
     pub fn stop(self) {

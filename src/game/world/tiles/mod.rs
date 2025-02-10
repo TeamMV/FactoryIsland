@@ -1,70 +1,52 @@
-pub mod reg;
+pub mod terrain;
 
+use std::hint::unreachable_unchecked;
 use mvutils::save::{Loader, Savable, Saver};
 use mvutils::Savable;
-pub use reg::*;
 
 pub const TILE_SIZE: i32 = 30;
 
-#[derive(Clone, Savable)]
-pub enum Tile {
-    Static(StaticTile)
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
+pub enum Orientation {
+    #[default]
+    North,
+    South,
+    East,
+    West
 }
 
-impl Default for Tile {
-    fn default() -> Self {
-        Self::Static(StaticTile::new(Material::Air))
+impl Orientation {
+    pub fn from_u8(value: u8) -> Self {
+        match value & 3 {
+            0 => Orientation::North,
+            1 => Orientation::South,
+            2 => Orientation::East,
+            3 => Orientation::West,
+            // Guaranteed to be unreachable due to bitwise and
+            _ => unsafe { unreachable_unchecked() },
+        }
     }
+}
+
+#[derive(Clone, Default, Savable)]
+pub enum Tile {
+    #[default]
+    Empty,
+    // figure out
 }
 
 impl Tile {
-    pub fn get_material(&self) -> &Material {
-        match self {
-            Tile::Static(tile) => &tile.material,
-        }
-    }
 
-    pub fn use_rle(&self) -> bool {
-        matches!(self, Tile::Static(_))
-    }
 }
 
-#[derive(Clone, Copy, Savable, Eq, PartialEq)]
-pub enum Material {
-    Air,
-    Grass,
-    Sand,
-    Stone,
-    Water,
-}
-
-#[derive(Clone, Savable)]
-pub struct StaticTile {
-    pub material: Material,
-    #[unsaved]
-    pub texture: usize,
-    #[unsaved]
-    pub orientation: u8,
-}
-
-unsafe impl Send for StaticTile {}
-unsafe impl Sync for StaticTile {}
-
-impl StaticTile {
-    pub fn new(material: Material) -> Self {
-        Self {
-            material,
-            texture: 0,
-            orientation: 0,
-        }
-    }
-
-    pub fn resolve(&mut self, texture: usize, orientation: u8) {
-        self.texture = texture;
-        self.orientation = orientation;
-    }
-
-    pub fn to_tile(self) -> Tile {
-        Tile::Static(self)
-    }
-}
+// pub trait ModdedTile {
+//     fn get_children(&self) -> Vec<(i32, i32)>;
+//     fn get_texture(&self) -> usize;
+//     fn get_uv(&self) -> Vec4;
+//
+//     fn tick(&mut self);
+// }
+// pub trait ModdedMultiTile {
+//     fn get_parent(&self) -> (i32, i32);
+//     fn get_uv(&self) -> Vec4;
+// }

@@ -13,9 +13,9 @@ dependencies = [
  "log",
  "mvengine",
  "mvengine-proc-macro",
- "mvlogger 0.3.0",
+ "mvlogger",
  "mvsync",
- "mvutils 1.1.8",
+ "mvutils 1.2.0",
  "noise",
  "num-traits 0.2.19",
  "parking_lot",
@@ -855,9 +855,9 @@ dependencies = [
  "itertools 0.14.0",
  "log",
  "mvengine-proc-macro",
- "mvlogger 0.4.0",
+ "mvlogger",
  "mvsync",
- "mvutils 1.1.8",
+ "mvutils 1.2.0",
  "num-traits 0.2.19",
  "openal",
  "parking_lot",
@@ -870,7 +870,7 @@ name = "mvengine-proc-macro"
 version = "1.0.0"
 dependencies = [
  "mvengine-ui-parsing",
- "mvutils 1.1.8",
+ "mvutils 1.2.0",
  "proc-macro2",
  "quote",
  "syn",
@@ -882,22 +882,12 @@ version = "1.0.0"
 
 [[package]]
 name = "mvlogger"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3885ebc4d7c9fc1cbd2c299fdf7f44c11ad40af0a00ec708e2f9c85290a906e2"
-dependencies = [
- "log",
- "mvutils 0.5.7",
-]
-
-[[package]]
-name = "mvlogger"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "106ce56e99c777a1c4b83b3110588e3496cdb3dac63cdd4959d8643c378bcf55"
 dependencies = [
  "log",
- "mvutils 1.1.8",
+ "mvutils 1.2.0",
 ]
 
 [[package]]
@@ -909,18 +899,6 @@ dependencies = [
  "crossbeam-channel",
  "mvutils 0.8.2",
  "num_cpus",
-]
-
-[[package]]
-name = "mvutils"
-version = "0.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42ba5a9152b7659d1cb473b6eb0c48c9e4b97440985ab5704565cbe02a10b253"
-dependencies = [
- "bytebuffer",
- "hashbrown 0.14.5",
- "mvutils-proc-macro 0.4.0",
- "num-traits 0.2.19",
 ]
 
 [[package]]
@@ -938,13 +916,13 @@ dependencies = [
 
 [[package]]
 name = "mvutils"
-version = "1.1.8"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8361c29495515061815f52034e4d1fd4962e8dec8cb9fbc4e56cc34d8693407"
+checksum = "0b5b8cf55a762ab50349bfc09be5274732f30f689e0b8b28643d56b0e68a87db"
 dependencies = [
  "bytebuffer",
  "hashbrown 0.15.2",
- "mvutils-proc-macro 1.0.2",
+ "mvutils-proc-macro 1.1.0",
  "num-traits 0.2.19",
  "parking_lot",
 ]
@@ -962,9 +940,9 @@ dependencies = [
 
 [[package]]
 name = "mvutils-proc-macro"
-version = "1.0.2"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d87b93719efc2e6ddce2511b48b0a24fa96cd2f3c0342a189ed45d3b299676c"
+checksum = "c88f73308a3da3b55ff760ed6e568cb5e1e57e6ca0429fe2cb83aa4268880bc7"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,5 +1,5 @@
 use crate::game::camera::Camera;
-use crate::game::events::LmaoEnumDispatcher;
+use crate::game::events::EventDispatcher;
 use crate::game::screens::debug::DebugScreen;
 use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
 use crate::game::world::tiles::{Tile, TILE_SIZE};
@@ -18,6 +18,7 @@ use mvengine::rendering::shader::light::LightOpenGLShader;
 use mvengine::window::Window;
 use mvutils::unsafe_utils::Unsafe;
 use crate::game::screens::entity::EntityScreen;
+use crate::game::world::tiles::terrain::TerrainMaterial;
 
 pub struct WorldScreen {
     enabled: bool,
@@ -34,7 +35,7 @@ pub struct WorldScreen {
 
     frame: f32,
 
-    events: &'static mut LmaoEnumDispatcher,
+    events: &'static mut EventDispatcher<'static>,
 
     debug: DebugScreen,
     is_debug: bool,
@@ -42,7 +43,7 @@ pub struct WorldScreen {
 }
 
 impl WorldScreen {
-    pub fn new(window: &Window, world: World, events: &mut LmaoEnumDispatcher) -> Self {
+    pub fn new(window: &Window, world: World, events: &'static mut EventDispatcher) -> Self {
         unsafe {
             LightOpenGLRenderer::prepare(window);
             let mut renderer = LightOpenGLRenderer::initialize(window);
@@ -77,7 +78,7 @@ impl WorldScreen {
                 world,
                 camera,
                 frame: 0.0,
-                events: unsafe { Unsafe::cast_mut_static(events) },
+                events,
                 debug: DebugScreen::new(window),
                 is_debug: false,
                 entities: EntityScreen::new(),
@@ -136,8 +137,8 @@ impl WorldScreen {
         self.frame += 0.003;
     }
 
-    pub fn load_chunk(&mut self, rx: i32, rz: i32) {
-        self.world.load_chunk(rx, rz);
+    pub fn world_mut(&mut self) -> &mut World {
+        &mut self.world
     }
 
     pub fn resize(&mut self, window: &Window) {
@@ -171,11 +172,9 @@ impl InputProcessor for WorldScreen {
                     if let MouseButton::Left = mb {
                         let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.camera);
 
-                        let chunk = self.world.get_chunk_mut(&(world_x, 0, world_y).into());
-                        let tile_pos: TilePos = (world_x, 0, world_y).into();
-                        let y = chunk.get_y_level(tile_pos.clone());
-                        let tile_pos = (world_x, y, world_y).into();
-                        chunk.set_tile_at(Tile::Air, tile_pos);
+                        let chunk = self.world.load_chunk_sync(world_x, world_y, &mut self.events);
+                        let tile_pos: TilePos = (world_x, world_y).into();
+                        chunk.set_terrain_at(tile_pos, TerrainMaterial::Water);
                     }
                 }
             };

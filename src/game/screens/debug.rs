@@ -44,9 +44,9 @@ impl DebugScreen {
                 .translate(20, (window.info().height - font_size - 20) as i32)
                 .get();
 
-            let tile_pos: TilePos = (camera.x as i32, 0i32, camera.y as i32).into();
+            let tile_pos: TilePos = (camera.x as i32, camera.y as i32).into();
 
-            font.draw(format!("Position: {:.1}, {:.1}", tile_pos.raw.0, tile_pos.raw.2).as_str(), font_size as f32, trans.clone(), 1.0, &RgbColor::white(), &mut self.controller);
+            font.draw(format!("Position: {:.1}, {:.1}", tile_pos.raw.0, tile_pos.raw.1).as_str(), font_size as f32, trans.clone(), 1.0, &RgbColor::white(), &mut self.controller);
             trans.translation.y -= (font_size + 20) as f32;
             font.draw(format!("Chunk:    {}, {} [{}, {}]", tile_pos.world_chunk_x, tile_pos.world_chunk_z, tile_pos.in_chunk_x, tile_pos.in_chunk_z).as_str(), font_size as f32, trans, 1.0, &RgbColor::white(), &mut self.controller);
         };
