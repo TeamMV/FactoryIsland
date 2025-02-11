@@ -1,14 +1,13 @@
 use crate::game::world::generator::biome::Biome;
-use crate::game::world::generator::{BiomeGeneratorImpl, NoiseProvider, TerrainGenerator};
 use crate::game::world::tiles::terrain::TerrainMaterial;
-use noise::{NoiseFn, Perlin, Seedable};
+use noise::{NoiseFn, Perlin};
 
-pub struct TerrainGeneratorImpl {
+pub struct TerrainGenerator {
     scale: f64,
     noise: Perlin
 }
 
-impl TerrainGeneratorImpl {
+impl TerrainGenerator {
     pub fn new(scale: f64, seed: u32) -> Self {
         Self {
             scale,
@@ -17,11 +16,11 @@ impl TerrainGeneratorImpl {
     }
 }
 
-impl TerrainGenerator for TerrainGeneratorImpl {
-    fn generate(&self, biome: Biome, x: i32, z: i32, seed: u32) -> TerrainMaterial {
+impl TerrainGenerator {
+    pub(crate) fn generate(&self, biome: Biome, x: i32, z: i32) -> TerrainMaterial {
         let scale = self.scale;
         let pt = (x as f64 * scale, z as f64 * scale);
-        let noise_value = self.noise.get_noise([pt.0, pt.1]);
+        let noise_value = self.noise.get([pt.0, pt.1]);
 
         //replace with more fancy logic
         let mapped = (noise_value + 1.0) / 2.0;

@@ -6,6 +6,7 @@ use mvengine::rendering::shader::light::LightOpenGLShader;
 use mvengine::ui::context::UiResources;
 use mvengine::ui::rendering::ctx;
 use mvengine::window::Window;
+use mvutils::utils::Time;
 use crate::game::camera::Camera;
 use crate::game::world::chunk::TilePos;
 use crate::game::world::tiles::TILE_SIZE;
@@ -37,6 +38,10 @@ impl DebugScreen {
         }
     }
 
+    pub fn start(&mut self) {
+        self.shader.use_program();
+    }
+
     pub fn draw(&mut self, window: &Window, camera: &Camera) {
         if let Some(font) = R.resolve_font(R.font.default) {
             let font_size = 50;
@@ -50,7 +55,23 @@ impl DebugScreen {
             trans.translation.y -= (font_size + 20) as f32;
             font.draw(format!("Chunk:    {}, {} [{}, {}]", tile_pos.world_chunk_x, tile_pos.world_chunk_z, tile_pos.in_chunk_x, tile_pos.in_chunk_z).as_str(), font_size as f32, trans, 1.0, &RgbColor::white(), &mut self.controller);
         };
-        self.shader.use_program();
         self.controller.draw(window, &self.mv_camera, &mut self.renderer, &mut self.shader);
+    }
+
+    pub fn draw_save_hint(&mut self, window: &Window, camera: &Camera) {
+        if let Some(font) = R.resolve_font(R.font.default) {
+            let font_size = 50;
+            let scale = (u128::time_millis() as f64 / 200.0).sin();
+            let scale = scale + 1.5;
+            let mut trans = ctx::transform()
+                .translate(20, 20)
+                .scale(scale as f32, 1.0)
+                .rotate(scale as f32 * -20.0)
+                .get();
+
+            println!("save");
+
+            font.draw("Saved...", font_size as f32, trans.clone(), 1.0, &RgbColor::white(), &mut self.controller);
+        };
     }
 }

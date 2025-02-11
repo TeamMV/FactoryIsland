@@ -45,18 +45,17 @@ impl ChunkSaver {
         full.push(&filename);
 
         let mut file = File::options().read(true).open(&full);
-        if let Err(_) = file {
-            return None;
-        }
-        if let Ok(mut file) = file {
-            let mut buffer = Vec::new();
-            if let Err(_) = file.read_to_end(&mut buffer) {
-                return None;
+        match file {
+            Ok(mut file) => {
+                let mut buffer = Vec::new();
+                if let Err(_) = file.read_to_end(&mut buffer) {
+                    return None;
+                }
+                let mut buffer = ByteBuffer::from(buffer);
+                Some(Chunk::load(&mut buffer).unwrap_or(Chunk::new(cx, cy, seed)))
             }
-            let mut buffer = ByteBuffer::from(buffer);
-            return Some(Chunk::load(&mut buffer).unwrap_or(Chunk::new(cx, cy, seed)));
+            Err(_) => None
         }
-        unreachable!()
     }
 }
 

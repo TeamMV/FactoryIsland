@@ -1,5 +1,7 @@
+use std::ops::Mul;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use crate::game::camera::Camera;
-use crate::game::events::EventDispatcher;
 use crate::game::screens::debug::DebugScreen;
 use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
 use crate::game::world::tiles::{Tile, TILE_SIZE};
@@ -15,9 +17,11 @@ use mvengine::rendering::control::RenderController;
 use mvengine::rendering::light::{Light, LightOpenGLRenderer};
 use mvengine::rendering::post::{OpenGLPostProcessRenderer, OpenGLPostProcessShader};
 use mvengine::rendering::shader::light::LightOpenGLShader;
+use mvengine::ui::timing::{AnimationState, DelayTask, DurationTask, TIMING_MANAGER};
 use mvengine::window::Window;
 use mvutils::unsafe_utils::Unsafe;
 use crate::game::screens::entity::EntityScreen;
+use crate::game::world::tiles::machines::bore::BoreMachine;
 use crate::game::world::tiles::terrain::TerrainMaterial;
 
 pub struct WorldScreen {
@@ -35,19 +39,27 @@ pub struct WorldScreen {
 
     frame: f32,
 
-    events: &'static mut EventDispatcher<'static>,
-
     debug: DebugScreen,
     is_debug: bool,
     entities: EntityScreen,
+
+    display_save_hint: Arc<AtomicBool>
 }
 
 impl WorldScreen {
-    pub fn new(window: &Window, world: World, events: &'static mut EventDispatcher) -> Self {
+    pub fn new(window: &Window, world: World) -> Self {
         unsafe {
             LightOpenGLRenderer::prepare(window);
             let mut renderer = LightOpenGLRenderer::initialize(window);
-            renderer.set_ambient(RgbColor::white().as_vec4());
+            renderer.set_ambient(RgbColor::white().as_vec4().mul(0.7));
+
+            renderer.push_light(Light {
+                pos: Vec2::new(300.0, 300.0),
+                color: RgbColor::green().as_vec4(),
+                intensity: 100.0,
+                range: 100.0,
+                falloff: 0.5,
+            });
 
             let mut shader = LightOpenGLShader::new();
             shader.make().unwrap();
@@ -78,10 +90,10 @@ impl WorldScreen {
                 world,
                 camera,
                 frame: 0.0,
-                events,
                 debug: DebugScreen::new(window),
                 is_debug: false,
                 entities: EntityScreen::new(),
+                display_save_hint: Arc::new(AtomicBool::new(false)),
             }
         }
     }
@@ -91,19 +103,35 @@ impl WorldScreen {
 
         if input.is_action("move_up") {
             self.camera.move_rel(0.0, -0.5);
-            self.world.on_cam_move(&self.camera, self.events);
+            self.world.on_cam_move(&self.camera);
         }
         if input.is_action("move_down") {
             self.camera.move_rel(0.0, 0.5);
-            self.world.on_cam_move(&self.camera, self.events);
+            self.world.on_cam_move(&self.camera);
         }
         if input.is_action("move_left") {
             self.camera.move_rel(0.5, 0.0);
-            self.world.on_cam_move(&self.camera, self.events);
+            self.world.on_cam_move(&self.camera);
         }
         if input.is_action("move_right") {
             self.camera.move_rel(-0.5, 0.0);
-            self.world.on_cam_move(&self.camera, self.events);
+            self.world.on_cam_move(&self.camera);
+        }
+        
+        if input.was_action("save") {
+            unsafe {
+                self.display_save_hint.store(true, Ordering::Release);
+                let arc = self.display_save_hint.clone();
+                TIMING_MANAGER.request(DelayTask::new(2000, move |_, _| {
+                    println!("done");
+                    arc.store(false, Ordering::Release);
+                }, AnimationState::empty()), None);
+            }
+        }
+
+        for light in self.renderer.lights_mut() {
+            light.pos.x = (self.camera.x * TILE_SIZE as f64) as f32;
+            light.pos.y = (self.camera.y * TILE_SIZE as f64) as f32;
         }
 
         self.shader.use_program();
@@ -130,6 +158,12 @@ impl WorldScreen {
             self.is_debug ^= true;
         }
 
+        self.debug.start();
+
+        if self.display_save_hint.load(Ordering::Acquire) {
+            self.debug.draw_save_hint(window, &self.camera);
+        }
+
         if self.is_debug {
             self.debug.draw(window, &self.camera);
         }
@@ -149,13 +183,13 @@ impl WorldScreen {
 
             self.renderer.push_light(Light {
                 pos: Vec2::new(300.0, 300.0),
-                color: RgbColor::red().as_vec4(),
+                color: RgbColor::green().as_vec4(),
                 intensity: 1.2,
                 range: 200.0,
                 falloff: 1.8,
             });
 
-            self.renderer.set_ambient(RgbColor::white().as_vec4());
+            self.renderer.set_ambient(RgbColor::white().as_vec4().mul(0.2));
 
             self.debug = DebugScreen::new(window);
         }
@@ -172,9 +206,15 @@ impl InputProcessor for WorldScreen {
                     if let MouseButton::Left = mb {
                         let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.camera);
 
-                        let chunk = self.world.load_chunk_sync(world_x, world_y, &mut self.events);
+                        let pos = TilePos::new(world_x, world_y);
+                        let chunk = self.world.force_load(pos.world_chunk_x, pos.world_chunk_z);
                         let tile_pos: TilePos = (world_x, world_y).into();
                         chunk.set_terrain_at(tile_pos, TerrainMaterial::Water);
+                    } else if let MouseButton::Right = mb {
+                        let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.camera);
+
+                        let pos = TilePos::new(world_x, world_y);
+                        self.world.set_tile_at(pos, Tile::Bore(BoreMachine::new()));
                     }
                 }
             };

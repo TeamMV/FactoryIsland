@@ -1,12 +1,11 @@
-use noise::{NoiseFn, Perlin, Seedable};
-use crate::game::world::generator::{BiomeGenerator, NoiseProvider};
+use noise::{NoiseFn, Perlin};
 
-pub struct BiomeGeneratorImpl {
+pub struct BiomeGenerator {
     scale: f64,
     noise: Perlin
 }
 
-impl BiomeGeneratorImpl {
+impl BiomeGenerator {
     pub fn new(scale: f64, seed: u32) -> Self {
         Self {
             scale,
@@ -23,11 +22,11 @@ pub enum Biome {
     Rocks
 }
 
-impl BiomeGenerator for BiomeGeneratorImpl {
-    fn generate(&self, x: i32, z: i32, seed: u32) -> Biome {
+impl BiomeGenerator {
+    pub(crate) fn generate(&self, x: i32, z: i32) -> Biome {
         let scale = self.scale;
         let pt = (x as f64 * scale, z as f64 * scale);
-        let noise_value = self.noise.get_noise([pt.0, pt.1]);
+        let noise_value = self.noise.get([pt.0, pt.1]);
 
         //replace with more fancy logic
         let mapped = (noise_value + 1.0) / 2.0;

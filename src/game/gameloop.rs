@@ -1,10 +1,10 @@
-use crate::game::events::{Event, EventDispatcher};
 use crate::game::screens::world::WorldScreen;
 use crate::game::world::World;
 use crate::res::R;
 use crate::WINDOW_SIZE;
 use mvengine::input::consts::Key;
 use mvengine::input::registry::RawInput;
+use mvengine::rendering::OpenGLRenderer;
 use mvengine::ui::timing::TIMING_MANAGER;
 use mvengine::window::app::WindowCallbacks;
 use mvengine::window::{UninitializedWindow, Window};
@@ -12,19 +12,15 @@ use mvutils::once::CreateOnce;
 use parking_lot::Mutex;
 use std::ops::Deref;
 use std::sync::Arc;
-use mvengine::rendering::OpenGLRenderer;
-use mvutils::unsafe_utils::Unsafe;
 
 pub struct GameLoop {
     world_screen: CreateOnce<Arc<Mutex<WorldScreen>>>,
-    events: EventDispatcher<'static>,
 }
 
 impl WindowCallbacks for GameLoop {
     fn new(window: UninitializedWindow) -> Self {
         Self {
             world_screen: CreateOnce::new(),
-            events: EventDispatcher::new(),
         }
     }
 
@@ -48,23 +44,17 @@ impl WindowCallbacks for GameLoop {
         registry.bind_action("fullscreen", vec![RawInput::KeyPress(Key::F11)]);
         registry.create_action("debug");
         registry.bind_action("debug", vec![RawInput::KeyPress(Key::F3)]);
+        registry.create_action("save");
+        registry.bind_action("save", vec![RawInput::KeyPress(Key::LControl), RawInput::KeyPress(Key::S)]);
 
         let world = World::create("helloseed");
-        let static_events = unsafe { Unsafe::cast_mut_static(&mut self.events) };
-        let screen = WorldScreen::new(window, world, static_events);
+        let screen = WorldScreen::new(window, world);
 
         let arc = Arc::new(Mutex::new(screen));
 
         window.input.register_new_event_target(arc.clone());
 
         self.world_screen.create(|| arc);
-
-        // self.events.add_event_handler(Box::new(|event, mut handle| {
-        //     if let LmaoEnum::ChunkLoad(x, z) = event {
-        //         println!("Loaded Chunk {x}, {z}!, But stopped it now!");
-        //         handle.pause();
-        //     }
-        // }))
     }
 
     fn update(&mut self, window: &mut Window, delta_t: f64) {
@@ -73,17 +63,6 @@ impl WindowCallbacks for GameLoop {
 
     fn draw(&mut self, window: &mut Window, delta_t: f64) {
         unsafe {
-            for (dispatcher, event) in self.events.pump() {
-                match event {
-                    Event::ChunkLoad(event) => {
-                        if event.cancelled { continue; }
-                        let mut lock = self.world_screen.lock();
-                        lock.world_mut().load_chunk(event.x, event.z, dispatcher);
-                    }
-                    Event::ChunkGenerate(event) => {}
-                }
-            }
-
             OpenGLRenderer::clear();
 
             let mut lock = self.world_screen.lock();

@@ -10,6 +10,7 @@ use std::fmt::{Debug, Formatter};
 pub const CHUNK_SIZE: usize = 64;
 pub const CHUNK_TILES: usize = CHUNK_SIZE * CHUNK_SIZE;
 pub const RENDER_DISTANCE: i32 = 1;
+pub const UNLOAD_DISTANCE: i32 = 4;
 
 pub type ChunkGenerator = fn(&mut Chunk, seed: u32);
 
@@ -111,6 +112,8 @@ impl From<(i32, i32)> for TilePos {
     }
 }
 
-
-
-
+impl Debug for TilePos {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("raw:{:?}, cx:{}, cz:{}, wx:{}, wz:{}", self.raw, self.in_chunk_x, self.in_chunk_z, self.world_chunk_x, self.world_chunk_z))
+    }
+}

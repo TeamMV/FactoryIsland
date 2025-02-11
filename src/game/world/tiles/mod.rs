@@ -1,8 +1,11 @@
 pub mod terrain;
+pub mod machines;
 
 use std::hint::unreachable_unchecked;
 use mvutils::save::{Loader, Savable, Saver};
 use mvutils::Savable;
+use crate::game::world::tiles::machines::bore::BoreMachine;
+use crate::res::R;
 
 pub const TILE_SIZE: i32 = 30;
 
@@ -32,21 +35,18 @@ impl Orientation {
 pub enum Tile {
     #[default]
     Empty,
-    // figure out
+    Bore(BoreMachine)
 }
 
 impl Tile {
+    pub fn get_texture(&self) -> Option<usize> {
+        match self {
+            Tile::Empty => None,
+            Tile::Bore(_) => Some(R.texture.machine_bore),
+        }
+    }
 
+    pub fn is_transparent(&self) -> bool {
+        true
+    }
 }
-
-// pub trait ModdedTile {
-//     fn get_children(&self) -> Vec<(i32, i32)>;
-//     fn get_texture(&self) -> usize;
-//     fn get_uv(&self) -> Vec4;
-//
-//     fn tick(&mut self);
-// }
-// pub trait ModdedMultiTile {
-//     fn get_parent(&self) -> (i32, i32);
-//     fn get_uv(&self) -> Vec4;
-// }
