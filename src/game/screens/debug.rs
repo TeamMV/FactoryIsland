@@ -1,3 +1,6 @@
+use crate::game::camera::Camera;
+use crate::game::world::chunk::TilePos;
+use crate::res::R;
 use mvengine::color::RgbColor;
 use mvengine::rendering::camera::OrthographicCamera;
 use mvengine::rendering::control::RenderController;
@@ -6,11 +9,6 @@ use mvengine::rendering::shader::light::LightOpenGLShader;
 use mvengine::ui::context::UiResources;
 use mvengine::ui::rendering::ctx;
 use mvengine::window::Window;
-use mvutils::utils::Time;
-use crate::game::camera::Camera;
-use crate::game::world::chunk::TilePos;
-use crate::game::world::tiles::TILE_SIZE;
-use crate::res::R;
 
 pub struct DebugScreen {
     renderer: LightOpenGLRenderer,
@@ -29,6 +27,7 @@ impl DebugScreen {
             shader.make().unwrap();
             shader.bind().unwrap();
 
+
             Self {
                 renderer,
                 controller: RenderController::new(shader.get_program_id()),
@@ -43,7 +42,7 @@ impl DebugScreen {
     }
 
     pub fn draw(&mut self, window: &Window, camera: &Camera) {
-        if let Some(font) = R.resolve_font(R.font.default) {
+       if let Some(font) = R.resolve_font(R.font.default) {
             let font_size = 50;
             let mut trans = ctx::transform()
                 .translate(20, (window.info().height - font_size - 20) as i32)
@@ -56,22 +55,5 @@ impl DebugScreen {
             font.draw(format!("Chunk:    {}, {} [{}, {}]", tile_pos.world_chunk_x, tile_pos.world_chunk_z, tile_pos.in_chunk_x, tile_pos.in_chunk_z).as_str(), font_size as f32, trans, 1.0, &RgbColor::white(), &mut self.controller);
         };
         self.controller.draw(window, &self.mv_camera, &mut self.renderer, &mut self.shader);
-    }
-
-    pub fn draw_save_hint(&mut self, window: &Window, camera: &Camera) {
-        if let Some(font) = R.resolve_font(R.font.default) {
-            let font_size = 50;
-            let scale = (u128::time_millis() as f64 / 200.0).sin();
-            let scale = scale + 1.5;
-            let mut trans = ctx::transform()
-                .translate(20, 20)
-                .scale(scale as f32, 1.0)
-                .rotate(scale as f32 * -20.0)
-                .get();
-
-            println!("save");
-
-            font.draw("Saved...", font_size as f32, trans.clone(), 1.0, &RgbColor::white(), &mut self.controller);
-        };
     }
 }

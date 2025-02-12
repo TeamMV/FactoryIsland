@@ -42,8 +42,6 @@ pub struct WorldScreen {
     debug: DebugScreen,
     is_debug: bool,
     entities: EntityScreen,
-
-    display_save_hint: Arc<AtomicBool>
 }
 
 impl WorldScreen {
@@ -93,7 +91,6 @@ impl WorldScreen {
                 debug: DebugScreen::new(window),
                 is_debug: false,
                 entities: EntityScreen::new(),
-                display_save_hint: Arc::new(AtomicBool::new(false)),
             }
         }
     }
@@ -119,14 +116,7 @@ impl WorldScreen {
         }
         
         if input.was_action("save") {
-            unsafe {
-                self.display_save_hint.store(true, Ordering::Release);
-                let arc = self.display_save_hint.clone();
-                TIMING_MANAGER.request(DelayTask::new(2000, move |_, _| {
-                    println!("done");
-                    arc.store(false, Ordering::Release);
-                }, AnimationState::empty()), None);
-            }
+
         }
 
         for light in self.renderer.lights_mut() {
@@ -160,10 +150,6 @@ impl WorldScreen {
 
         self.debug.start();
 
-        if self.display_save_hint.load(Ordering::Acquire) {
-            self.debug.draw_save_hint(window, &self.camera);
-        }
-
         if self.is_debug {
             self.debug.draw(window, &self.camera);
         }
@@ -189,7 +175,7 @@ impl WorldScreen {
                 falloff: 1.8,
             });
 
-            self.renderer.set_ambient(RgbColor::white().as_vec4().mul(0.2));
+            self.renderer.set_ambient(RgbColor::white().as_vec4().mul(1.2));
 
             self.debug = DebugScreen::new(window);
         }
@@ -214,7 +200,7 @@ impl InputProcessor for WorldScreen {
                         let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.camera);
 
                         let pos = TilePos::new(world_x, world_y);
-                        self.world.set_tile_at(pos, Tile::Bore(BoreMachine::new()));
+                        self.world.set_tile_at(pos, Tile::Bore(BoreMachine::new().into()));
                     }
                 }
             };

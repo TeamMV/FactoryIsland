@@ -12,6 +12,9 @@ use mvutils::once::CreateOnce;
 use parking_lot::Mutex;
 use std::ops::Deref;
 use std::sync::Arc;
+use mvengine::graphics::animation::GlobalAnimation;
+use mvengine::ui::context::UiResources;
+use mvutils::unsafe_cast_mut;
 
 pub struct GameLoop {
     world_screen: CreateOnce<Arc<Mutex<WorldScreen>>>,
@@ -75,6 +78,8 @@ impl WindowCallbacks for GameLoop {
         if window.input.was_action("fullscreen") {
             window.toggle_fullscreen();
         }
+
+        R.tick_all_animations();
     }
 
     fn exiting(&mut self, window: &mut Window) {

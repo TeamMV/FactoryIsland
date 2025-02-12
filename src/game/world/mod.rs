@@ -72,7 +72,7 @@ impl World {
             let (x, z) = World::screen_to_world_pos(0, 0, camera);
             let tile_pos = TilePos::new(x, z);
             let (x, z) = (tile_pos.world_chunk_x, tile_pos.world_chunk_z);
-            for chunk in guard.iter() {
+            for chunk in guard.iter_mut() {
                 if chunk.chunk_world_x < x + RENDER_DISTANCE + 1 && chunk.chunk_world_x > x - RENDER_DISTANCE {
                     if chunk.chunk_world_z < z + RENDER_DISTANCE + 1 && chunk.chunk_world_z > z - RENDER_DISTANCE {
                         chunk.draw_tiles(controller, camera);

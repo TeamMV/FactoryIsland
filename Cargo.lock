@@ -8,14 +8,13 @@ version = "0.1.0"
 dependencies = [
  "bytebuffer",
  "crossbeam-channel",
- "hashbrown 0.15.2",
+ "hashbrown",
  "itertools 0.14.0",
  "log",
  "mvengine",
  "mvengine-proc-macro",
  "mvlogger",
- "mvsync",
- "mvutils 1.2.0",
+ "mvutils",
  "noise",
  "num-traits 0.2.19",
  "parking_lot",
@@ -540,16 +539,6 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.14.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
-dependencies = [
- "ahash",
- "allocator-api2",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
@@ -564,12 +553,6 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
-
-[[package]]
-name = "hermit-abi"
-version = "0.3.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
 name = "image"
@@ -653,7 +636,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c9c992b02b5b4c94ea26e32fe5bccb7aa7d9f390ab5c1221ff895bc7ea8b652"
 dependencies = [
  "equivalent",
- "hashbrown 0.15.2",
+ "hashbrown",
 ]
 
 [[package]]
@@ -849,15 +832,14 @@ dependencies = [
  "bytebuffer",
  "crossbeam-channel",
  "gl",
- "hashbrown 0.15.2",
+ "hashbrown",
  "image 0.25.5",
  "include_dir",
  "itertools 0.14.0",
  "log",
  "mvengine-proc-macro",
  "mvlogger",
- "mvsync",
- "mvutils 1.2.0",
+ "mvutils",
  "num-traits 0.2.19",
  "openal",
  "parking_lot",
@@ -870,7 +852,7 @@ name = "mvengine-proc-macro"
 version = "1.0.0"
 dependencies = [
  "mvengine-ui-parsing",
- "mvutils 1.2.0",
+ "mvutils",
  "proc-macro2",
  "quote",
  "syn",
@@ -887,55 +869,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "106ce56e99c777a1c4b83b3110588e3496cdb3dac63cdd4959d8643c378bcf55"
 dependencies = [
  "log",
- "mvutils 1.2.0",
-]
-
-[[package]]
-name = "mvsync"
-version = "1.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f9d2cd23d985f1398ac00f76bda809ac2359269a4e6db06062d0c036a269033"
-dependencies = [
- "crossbeam-channel",
- "mvutils 0.8.2",
- "num_cpus",
+ "mvutils",
 ]
 
 [[package]]
 name = "mvutils"
-version = "0.8.2"
+version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dc6ebfe87b8d30373ae96887cbbdba0950bf20c07c55b038dce569fa956b2dd"
+checksum = "9c4723255cae43c5bdfb0b70e1c5aa6457d2a7c4ee3c5e73733daf83300699ed"
 dependencies = [
  "bytebuffer",
- "hashbrown 0.14.5",
- "mvutils-proc-macro 0.4.0",
+ "hashbrown",
+ "mvutils-proc-macro",
  "num-traits 0.2.19",
  "parking_lot",
-]
-
-[[package]]
-name = "mvutils"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b5b8cf55a762ab50349bfc09be5274732f30f689e0b8b28643d56b0e68a87db"
-dependencies = [
- "bytebuffer",
- "hashbrown 0.15.2",
- "mvutils-proc-macro 1.1.0",
- "num-traits 0.2.19",
- "parking_lot",
-]
-
-[[package]]
-name = "mvutils-proc-macro"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d130ed551ee1232e6314114bf2014b4f0cd338d971f7b6eb414fbcfb938808c"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1061,16 +1008,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "num_cpus"
-version = "1.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
-dependencies = [
- "hermit-abi",
- "libc",
 ]
 
 [[package]]

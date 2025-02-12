@@ -9,7 +9,7 @@ use mvengine::rendering::texture::Texture;
 use mvengine::rendering::{InputVertex, Quad, Transform};
 use mvengine::ui::context::UiResources;
 
-pub unsafe fn draw_tiles(chunk: &Chunk, controller: &mut RenderController, cx: i32, cz: i32, camera: &Camera) {
+pub unsafe fn draw_tiles(chunk: &mut Chunk, controller: &mut RenderController, cx: i32, cz: i32, camera: &Camera) {
     for x in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
             {
@@ -22,21 +22,25 @@ pub unsafe fn draw_tiles(chunk: &Chunk, controller: &mut RenderController, cx: i
                 if zoomed_x >= -TILE_SIZE && zoomed_z >= -TILE_SIZE {
                     if zoomed_x < WINDOW_SIZE.0 && zoomed_z < WINDOW_SIZE.1 {
                         let terrain = chunk.terrain.terrain[x + z * CHUNK_SIZE];
-                        let tile = &chunk.tiles[x + z * CHUNK_SIZE];
+                        let tile = &mut chunk.tiles[x + z * CHUNK_SIZE];
                         if tile.is_transparent() {
                             if let Some(texture) = terrain.get_texture() {
                                 let tex = R.resolve_texture(texture).unwrap();
                                 let orientation = chunk.terrain.orientation[x + z * CHUNK_SIZE];
                                 let y = terrain.get_y() * 100;
 
-                                draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation);
+                                let coords = [(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)];
+
+                                draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation.apply(coords));
                             }
                         }
-                        if let Some(texture) = tile.get_texture() {
-                            let tex = R.resolve_texture(texture).unwrap();
+                        let orientation = tile.get_orientation();
+                        if let Some((tex, coords)) = tile.get_texture() {
                             let y = terrain.get_y() * 100 + 100;
 
-                            draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, Orientation::North)
+                            let coords = coords.as_uv();
+
+                            draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation.apply(coords));
                         }
                     }
                 }
@@ -45,7 +49,7 @@ pub unsafe fn draw_tiles(chunk: &Chunk, controller: &mut RenderController, cx: i
     }
 }
 
-unsafe fn draw_texture(controller: &mut RenderController, camera: &Camera, zoomed_x: i32, zoomed_z: i32, y: i32, tex: &Texture, orientation: Orientation) {
+unsafe fn draw_texture(controller: &mut RenderController, camera: &Camera, zoomed_x: i32, zoomed_z: i32, y: i32, tex: &Texture, uv_coords: [(f32, f32); 4]) {
     let w = (TILE_SIZE as f32 * camera.zoom) as i32;
     let h = (TILE_SIZE as f32 * camera.zoom) as i32;
 
@@ -53,13 +57,6 @@ unsafe fn draw_texture(controller: &mut RenderController, camera: &Camera, zoome
     let x2 = zoomed_x as f32 + w as f32;
     let y1 = zoomed_z as f32;
     let y2 = zoomed_z as f32 + h as f32;
-
-    let uv_coords = match orientation {
-        Orientation::North => [(1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (0.0, 0.0)], // 90 degrees
-        Orientation::South => [(1.0, 1.0), (0.0, 1.0), (0.0, 0.0), (1.0, 0.0)], // 180 degrees
-        Orientation::East => [(0.0, 1.0), (0.0, 0.0), (1.0, 0.0), (1.0, 1.0)], // 270 degrees
-        _ => [(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)], // 0 degrees
-    };
 
     controller.push_quad(Quad {
         points: [

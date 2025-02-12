@@ -17,5 +17,16 @@ r! {
         <fonts>
             <font name="default" src="fonts/data.font" atlas="fonts/atlas.png"/>
         </fonts>
+        <tilesets>
+            <tileset name="bore" atlas="textures/machines/bore_anim.png" width="64" height="64" count="3">
+                <entry name="disabled" index="0"/>
+                <fps value="4"/>
+            </tileset>
+        </tilesets>
+        <animations>
+            <animation name="bore" tileset="bore" fps="4"/>
+            <animation name="bore_fast" tileset="bore" fps="8"/>
+            <animation name="bore_overloaded" tileset="bore" fps="24"/>
+        </animations>
     </resources>
 }

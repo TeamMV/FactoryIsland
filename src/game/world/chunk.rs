@@ -51,6 +51,7 @@ impl Chunk {
 
     pub fn finalize_generation(&mut self) {
         self.terrain.apply_modifications();
+        self.tiles.iter_mut().for_each(Tile::post_init);
     }
 
     pub fn generate_terrain_at(&mut self, x: usize, z: usize, material: TerrainMaterial, orientation: Orientation) {
@@ -63,8 +64,9 @@ impl Chunk {
         self.terrain.set_tile_at(pos.in_chunk_x as u8, pos.in_chunk_z as u8, material);
     }
 
-    pub fn set_tile_at(&mut self, tile: Tile, pos: TilePos) {
+    pub fn set_tile_at(&mut self, mut tile: Tile, pos: TilePos) {
         let tile_idx = pos.in_chunk_x + pos.in_chunk_z * CHUNK_SIZE;
+        tile.post_init();
         self.tiles[tile_idx] = tile;
     }
 
@@ -78,7 +80,7 @@ impl Chunk {
         &mut self.tiles[tile_idx]
     }
 
-    pub fn draw_tiles(&self, controller: &mut RenderController, camera: &Camera) {
+    pub fn draw_tiles(&mut self, controller: &mut RenderController, camera: &Camera) {
         unsafe {
             render::draw_tiles(self, controller, self.chunk_world_x, self.chunk_world_z, camera);
         }
