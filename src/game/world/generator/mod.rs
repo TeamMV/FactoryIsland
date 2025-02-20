@@ -1,6 +1,7 @@
 pub mod biome;
 pub mod terrain;
 
+use std::hash::{DefaultHasher, Hash, Hasher};
 use crate::game::world::chunk::{Chunk, CHUNK_SIZE};
 use crate::game::world::generator::biome::{Biome, BiomeGenerator};
 use crate::game::world::generator::terrain::TerrainGenerator;
@@ -18,11 +19,11 @@ pub struct GeneratorPipeline {
 }
 
 impl GeneratorPipeline {
-    pub fn new(seed: u32) -> Self {
+    pub fn new(seed: u32, settings: WorldSettings) -> Self {
         Self {
             seed,
-            biomes: BiomeGenerator::new(BIOME_SCALE, seed),
-            terrain: TerrainGenerator::new(TERRAIN_SCALE, seed),
+            biomes: BiomeGenerator::new(settings.biome_scale, seed),
+            terrain: TerrainGenerator::new(settings.terrain_scale, seed),
         }
     }
 
@@ -77,5 +78,32 @@ pub struct GeneratedColumn {
 impl GeneratedColumn {
     pub fn new(biome: Biome, material: TerrainMaterial, orientation: Orientation) -> Self {
         Self { biome, material, orientation }
+    }
+}
+
+pub struct WorldSettings {
+    pub seed: u32,
+    pub terrain_scale: f64,
+    pub biome_scale: f64
+}
+
+impl WorldSettings {
+    pub fn from_seed(seed: &str) -> Self {
+        let mut hasher = DefaultHasher::new();
+        seed.hash(&mut hasher);
+        let seed = hasher.finish() as u32;
+        let mut this = WorldSettings::default();
+        this.seed = seed;
+        this
+    }
+}
+
+impl Default for WorldSettings {
+    fn default() -> Self {
+        WorldSettings {
+            seed: 22,
+            terrain_scale: TERRAIN_SCALE,
+            biome_scale: BIOME_SCALE,
+        }
     }
 }

@@ -1,0 +1,21 @@
+#PARTS
+base=0
+rotor=1
+
+#BOUNDS
+base = [30, 30]
+rotor = [30, 30]
+
+#CONSTRAINTS
+rotor -> base
+
+#ANIMATIONS
++rotate
+:pre
+;rotor.origin = [15, 15]
+:keyframes
+>0.0
+rotor.rotation = 0
+>1.0
+rotor.rotation = 360
+<

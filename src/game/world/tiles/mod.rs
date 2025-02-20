@@ -1,15 +1,15 @@
 pub mod terrain;
 pub mod machines;
 
-use std::hint::unreachable_unchecked;
-use mvengine::graphics::tileset::{ClockingFramePump, LoopingFramePump, Pump};
+use crate::game::world::tiles::machines::bore::BoreMachine;
+use mvengine::graphics::tileset::Pump;
 use mvengine::math::vec::Vec4;
 use mvengine::rendering::texture::Texture;
 use mvengine::ui::context::UiResources;
 use mvutils::save::{Loader, Savable, Saver};
 use mvutils::Savable;
-use crate::game::world::tiles::machines::bore::BoreMachine;
-use crate::res::R;
+use std::hint::unreachable_unchecked;
+use mvengine::rendering::Transform;
 
 pub const TILE_SIZE: i32 = 30;
 
@@ -53,7 +53,7 @@ pub enum Tile {
 
 pub trait TileCallbacks {
     fn post_init(&mut self);
-    fn get_texture(&mut self) -> (&Texture, Vec4);
+    fn get_texture(&mut self) -> Vec<(&Texture, Vec4, Transform)>;
     fn get_orientation(&self) -> Orientation;
     fn is_transparent(&self) -> bool;
 }
@@ -66,7 +66,7 @@ impl Tile {
         }
     }
 
-    pub fn get_texture(&mut self) -> Option<(&Texture, Vec4)> {
+    pub fn get_texture(&mut self) -> Option<Vec<(&Texture, Vec4, Transform)>> {
         match self {
             Tile::Empty => None,
             Tile::Bore(bore) => Some(bore.get_texture()),

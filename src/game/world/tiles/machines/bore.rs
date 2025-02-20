@@ -1,6 +1,7 @@
 use mvengine::graphics::tileset::{ClockingFramePump, LoopingFramePump, Pump};
 use mvengine::math::vec::Vec4;
 use mvengine::rendering::texture::Texture;
+use mvengine::rendering::Transform;
 use mvengine::ui::context::UiResources;
 use mvengine::ui::res::OrMissingTexture;
 use mvutils::{lazy, Savable};
@@ -30,8 +31,8 @@ impl TileCallbacks for BoreMachine {
         let set = R.resolve_tileset(R.tileset.bore).unwrap();
     }
 
-    fn get_texture(&mut self) -> (&Texture, Vec4) {
-        if self.enabled {
+    fn get_texture(&mut self) -> Vec<(&Texture, Vec4, Transform)> {
+        let a = if self.enabled {
             if self.speed > 15.0 {
                 R.resolve_animation(R.animation.bore_overloaded).unwrap().get_current()
             } else if self.speed > 7.5 {
@@ -41,7 +42,8 @@ impl TileCallbacks for BoreMachine {
             }
         } else {
             R.resolve_tile(R.tileset.bore, R.tile.bore.disabled).or_missing_texture()
-        }
+        };
+        vec![(a.0, a.1, Transform::new())]
     }
 
     fn get_orientation(&self) -> Orientation {

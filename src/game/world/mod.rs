@@ -1,6 +1,6 @@
 use crate::game::camera::Camera;
 use crate::game::world::chunk::{Chunk, TilePos, CHUNK_SIZE, RENDER_DISTANCE, UNLOAD_DISTANCE};
-use crate::game::world::generator::GeneratorPipeline;
+use crate::game::world::generator::{GeneratorPipeline, WorldSettings};
 use crate::game::world::save::{ChunkSaver, ChunkSaverThread, ChunkTask};
 use crate::game::world::tiles::{Tile, TILE_SIZE};
 use hashbrown::HashSet;
@@ -27,17 +27,13 @@ pub struct World {
 }
 
 impl World {
-    pub fn create(seed: &str) -> Self {
-        let mut hasher = DefaultHasher::new();
-        seed.hash(&mut hasher);
-        let seed = hasher.finish() as u32;
-
+    pub fn create(settings: WorldSettings) -> Self {
         Self {
-            seed,
+            seed: settings.seed,
             loaded_chunks: Arc::new(Mutex::new(vec![])),
             saver: ChunkSaverThread::new(ChunkSaver),
             loading_chunks: Arc::new(Mutex::new(HashSet::new())),
-            generator: Arc::new(Mutex::new(GeneratorPipeline::new(seed))),
+            generator: Arc::new(Mutex::new(GeneratorPipeline::new(settings.seed, settings))),
         }
     }
 

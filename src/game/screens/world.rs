@@ -1,9 +1,9 @@
-use std::ops::Mul;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use crate::game::camera::Camera;
 use crate::game::screens::debug::DebugScreen;
+use crate::game::screens::entity::EntityScreen;
 use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
+use crate::game::world::tiles::machines::bore::BoreMachine;
+use crate::game::world::tiles::terrain::TerrainMaterial;
 use crate::game::world::tiles::{Tile, TILE_SIZE};
 use crate::game::world::World;
 use crate::WINDOW_SIZE;
@@ -17,12 +17,10 @@ use mvengine::rendering::control::RenderController;
 use mvengine::rendering::light::{Light, LightOpenGLRenderer};
 use mvengine::rendering::post::{OpenGLPostProcessRenderer, OpenGLPostProcessShader};
 use mvengine::rendering::shader::light::LightOpenGLShader;
-use mvengine::ui::timing::{AnimationState, DelayTask, DurationTask, TIMING_MANAGER};
 use mvengine::window::Window;
-use mvutils::unsafe_utils::Unsafe;
-use crate::game::screens::entity::EntityScreen;
-use crate::game::world::tiles::machines::bore::BoreMachine;
-use crate::game::world::tiles::terrain::TerrainMaterial;
+use std::ops::Mul;
+use crate::game::entity::player::WorldPlayer;
+use crate::res::R;
 
 pub struct WorldScreen {
     enabled: bool,
@@ -34,8 +32,7 @@ pub struct WorldScreen {
     ssao: OpenGLPostProcessShader,
     clouds: OpenGLPostProcessShader,
 
-    world: World,
-    camera: Camera,
+    player: WorldPlayer,
 
     frame: f32,
 
@@ -45,7 +42,7 @@ pub struct WorldScreen {
 }
 
 impl WorldScreen {
-    pub fn new(window: &Window, world: World) -> Self {
+    pub fn new(window: &Window, player: WorldPlayer) -> Self {
         unsafe {
             LightOpenGLRenderer::prepare(window);
             let mut renderer = LightOpenGLRenderer::initialize(window);
@@ -85,8 +82,7 @@ impl WorldScreen {
                 post_renderer: OpenGLPostProcessRenderer::new(window.info().width as i32, window.info().height as i32),
                 ssao,
                 clouds,
-                world,
-                camera,
+                player,
                 frame: 0.0,
                 debug: DebugScreen::new(window),
                 is_debug: false,
@@ -99,20 +95,16 @@ impl WorldScreen {
         let input = &window.input;
 
         if input.is_action("move_up") {
-            self.camera.move_rel(0.0, -0.5);
-            self.world.on_cam_move(&self.camera);
+            self.player.move_rel(0.0, -0.5);
         }
         if input.is_action("move_down") {
-            self.camera.move_rel(0.0, 0.5);
-            self.world.on_cam_move(&self.camera);
+            self.player.move_rel(0.0, 0.5);
         }
         if input.is_action("move_left") {
-            self.camera.move_rel(0.5, 0.0);
-            self.world.on_cam_move(&self.camera);
+            self.player.move_rel(0.5, 0.0);
         }
         if input.is_action("move_right") {
-            self.camera.move_rel(-0.5, 0.0);
-            self.world.on_cam_move(&self.camera);
+            self.player.move_rel(-0.5, 0.0);
         }
         
         if input.was_action("save") {
@@ -120,14 +112,15 @@ impl WorldScreen {
         }
 
         for light in self.renderer.lights_mut() {
-            light.pos.x = (self.camera.x * TILE_SIZE as f64) as f32;
-            light.pos.y = (self.camera.y * TILE_SIZE as f64) as f32;
+            light.pos.x = (self.player.camera.x * TILE_SIZE as f64) as f32;
+            light.pos.y = (self.player.camera.y * TILE_SIZE as f64) as f32;
         }
 
         self.shader.use_program();
-        self.world.draw(&mut self.controller, &self.camera);
+        self.player.world.draw(&mut self.controller, &self.player.camera);
+        self.entities.draw(&mut self.controller, window, &self.player.camera);
 
-        let cam_pos = Vec2::new(self.camera.x as f32 * TILE_SIZE as f32, self.camera.y as f32 * TILE_SIZE as f32);
+        let cam_pos = Vec2::new(self.player.camera.x as f32 * TILE_SIZE as f32, self.player.camera.y as f32 * TILE_SIZE as f32);
 
         let target = self.controller.draw_to_target(window, &self.mv_camera, &mut self.renderer, &mut self.shader);
         self.post_renderer.set_target(target);
@@ -140,9 +133,11 @@ impl WorldScreen {
         self.post_renderer.draw_to_screen();
 
         self.shader.use_program();
-        self.entities.draw(&mut self.controller, window, &self.camera);
+        self.player.draw(&mut self.controller, window);
+        self.entities.draw(&mut self.controller, window, &self.player.camera);
+        self.player.draw_ui(&mut self.controller, window);
+        self.entities.draw_ui(&mut self.controller, window, &self.player.camera);
         self.controller.draw(window, &self.mv_camera, &mut self.renderer, &mut self.shader);
-
 
         if window.input.was_action("debug") {
             self.is_debug ^= true;
@@ -151,14 +146,14 @@ impl WorldScreen {
         self.debug.start();
 
         if self.is_debug {
-            self.debug.draw(window, &self.camera);
+            self.debug.draw(window, &self.player.camera);
         }
 
         self.frame += 0.003;
     }
 
     pub fn world_mut(&mut self) -> &mut World {
-        &mut self.world
+        &mut self.player.world
     }
 
     pub fn resize(&mut self, window: &Window) {
@@ -190,17 +185,17 @@ impl InputProcessor for WorldScreen {
                 let my = WINDOW_SIZE.1 - input.mouse_y;
                 if let MouseAction::Press(mb) = ma {
                     if let MouseButton::Left = mb {
-                        let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.camera);
+                        let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.player.camera);
 
                         let pos = TilePos::new(world_x, world_y);
-                        let chunk = self.world.force_load(pos.world_chunk_x, pos.world_chunk_z);
+                        let chunk = self.player.world.force_load(pos.world_chunk_x, pos.world_chunk_z);
                         let tile_pos: TilePos = (world_x, world_y).into();
                         chunk.set_terrain_at(tile_pos, TerrainMaterial::Water);
                     } else if let MouseButton::Right = mb {
-                        let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.camera);
+                        let (world_x, world_y) = World::screen_to_world_pos(mx, my, &self.player.camera);
 
                         let pos = TilePos::new(world_x, world_y);
-                        self.world.set_tile_at(pos, Tile::Bore(BoreMachine::new().into()));
+                        self.player.world.set_tile_at(pos, Tile::Bore(BoreMachine::new().into()));
                     }
                 }
             };

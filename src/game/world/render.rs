@@ -31,16 +31,18 @@ pub unsafe fn draw_tiles(chunk: &mut Chunk, controller: &mut RenderController, c
 
                                 let coords = [(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)];
 
-                                draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation.apply(coords));
+                                draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation.apply(coords), Transform::new());
                             }
                         }
                         let orientation = tile.get_orientation();
-                        if let Some((tex, coords)) = tile.get_texture() {
-                            let y = terrain.get_y() * 100 + 100;
+                        if let Some(vec) = tile.get_texture() {
+                            for (tex, coords, transform) in vec {
+                                let y = terrain.get_y() * 100 + 100;
 
-                            let coords = coords.as_uv();
+                                let coords = coords.as_uv();
 
-                            draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation.apply(coords));
+                                draw_texture(controller, camera, zoomed_x, zoomed_z, y, tex, orientation.apply(coords), transform);
+                            }
                         }
                     }
                 }
@@ -49,7 +51,7 @@ pub unsafe fn draw_tiles(chunk: &mut Chunk, controller: &mut RenderController, c
     }
 }
 
-unsafe fn draw_texture(controller: &mut RenderController, camera: &Camera, zoomed_x: i32, zoomed_z: i32, y: i32, tex: &Texture, uv_coords: [(f32, f32); 4]) {
+unsafe fn draw_texture(controller: &mut RenderController, camera: &Camera, zoomed_x: i32, zoomed_z: i32, y: i32, tex: &Texture, uv_coords: [(f32, f32); 4], transform: Transform) {
     let w = (TILE_SIZE as f32 * camera.zoom) as i32;
     let h = (TILE_SIZE as f32 * camera.zoom) as i32;
 
@@ -61,32 +63,32 @@ unsafe fn draw_texture(controller: &mut RenderController, camera: &Camera, zoome
     controller.push_quad(Quad {
         points: [
             InputVertex {
-                transform: Transform::new(),
-                pos: (x1, y1, y as f32),
+                transform: transform.clone().translate_self(x1, y1),
+                pos: (0.0, 0.0, y as f32),
                 color: RgbColor::transparent().as_vec4(),
                 uv: uv_coords[0],
                 texture: tex.id,
                 has_texture: 1.0,
             },
             InputVertex {
-                transform: Transform::new(),
-                pos: (x1, y2, y as f32),
+                transform: transform.clone().translate_self(x1, y2),
+                pos: (0.0, 0.0, y as f32),
                 color: RgbColor::transparent().as_vec4(),
                 uv: uv_coords[1],
                 texture: tex.id,
                 has_texture: 1.0,
             },
             InputVertex {
-                transform: Transform::new(),
-                pos: (x2, y2, y as f32),
+                transform: transform.clone().translate_self(x2, y2),
+                pos: (0.0, 0.0, y as f32),
                 color: RgbColor::transparent().as_vec4(),
                 uv: uv_coords[2],
                 texture: tex.id,
                 has_texture: 1.0,
             },
             InputVertex {
-                transform: Transform::new(),
-                pos: (x2, y1, y as f32),
+                transform: transform.translate_self(x2, y1),
+                pos: (0.0, 0.0, y as f32),
                 color: RgbColor::transparent().as_vec4(),
                 uv: uv_coords[3],
                 texture: tex.id,

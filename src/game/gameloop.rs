@@ -1,10 +1,13 @@
+use crate::game::entity::player::WorldPlayer;
 use crate::game::screens::world::WorldScreen;
+use crate::game::world::tiles::TILE_SIZE;
 use crate::game::world::World;
 use crate::res::R;
 use crate::WINDOW_SIZE;
 use mvengine::input::consts::Key;
 use mvengine::input::registry::RawInput;
 use mvengine::rendering::OpenGLRenderer;
+use mvengine::ui::context::UiResources;
 use mvengine::ui::timing::TIMING_MANAGER;
 use mvengine::window::app::WindowCallbacks;
 use mvengine::window::{UninitializedWindow, Window};
@@ -12,9 +15,7 @@ use mvutils::once::CreateOnce;
 use parking_lot::Mutex;
 use std::ops::Deref;
 use std::sync::Arc;
-use mvengine::graphics::animation::GlobalAnimation;
-use mvengine::ui::context::UiResources;
-use mvutils::unsafe_cast_mut;
+use crate::game::world::generator::WorldSettings;
 
 pub struct GameLoop {
     world_screen: CreateOnce<Arc<Mutex<WorldScreen>>>,
@@ -50,8 +51,11 @@ impl WindowCallbacks for GameLoop {
         registry.create_action("save");
         registry.bind_action("save", vec![RawInput::KeyPress(Key::LControl), RawInput::KeyPress(Key::S)]);
 
-        let world = World::create("helloseed");
-        let screen = WorldScreen::new(window, world);
+        let mut settings = WorldSettings::from_seed("some_cool_seed");
+        settings.terrain_scale *= 0.5;
+        let world = World::create(settings);
+        let player = WorldPlayer::new("v22", R.texture.player, (TILE_SIZE, TILE_SIZE), world);
+        let screen = WorldScreen::new(window, player);
 
         let arc = Arc::new(Mutex::new(screen));
 
