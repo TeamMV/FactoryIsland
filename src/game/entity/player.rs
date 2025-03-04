@@ -109,10 +109,17 @@ impl WorldPlayer {
         }
     }
 
-    fn screen_pos(&self) -> (i32, i32) {
+    pub fn screen_pos(&self) -> (i32, i32) {
         (
             (self.camera.x * TILE_SIZE as f64) as i32 - (self.position.0 * TILE_SIZE as f64) as i32,
             (self.camera.y * TILE_SIZE as f64) as i32 - (self.position.1 * TILE_SIZE as f64) as i32
+        )
+    }
+
+    pub fn get_world_position(&self) -> (i32, i32) {
+        (
+            -self.position.0.floor() as i32,
+            -self.position.1.floor() as i32
         )
     }
 

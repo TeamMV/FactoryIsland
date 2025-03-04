@@ -6,7 +6,9 @@ use mvengine::ui::context::UiResources;
 use mvengine::ui::res::OrMissingTexture;
 use mvutils::{lazy, Savable};
 use mvutils::utils::TetrahedronOp;
+use crate::game::world::chunk::TilePos;
 use crate::game::world::tiles::{Orientation, TileCallbacks};
+use crate::game::world::World;
 use crate::res::R;
 
 #[derive(Clone, Savable)]

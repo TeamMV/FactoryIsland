@@ -11,7 +11,11 @@ r! {
             <texture name="tile_sand" src="textures/tiles/sand.png"/>
             <texture name="tile_stone" src="textures/tiles/stone.png"/>
             <texture name="tile_water" src="textures/tiles/water.png"/>
+            <texture name="nature_tree" src="textures/nature/tree1.png"/>
+            <texture name="nature_cactus" src="textures/nature/cactus.png"/>
+            <texture name="nature_mushroom" src="textures/nature/mushroom.png"/>
             <texture name="machine_bore" src="textures/machines/bore.png"/>
+            <texture name="big_wall" src="textures/buildings/big_wall.png"/>
             <texture name="player" src="textures/player.png"/>
         </textures>
         <fonts>

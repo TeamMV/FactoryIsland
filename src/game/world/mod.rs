@@ -8,15 +8,14 @@ use itertools::Itertools;
 use mvengine::rendering::control::RenderController;
 use mvutils::unsafe_utils::Unsafe;
 use parking_lot::Mutex;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
-use crate::WINDOW_SIZE;
-
 pub mod tiles;
 pub mod chunk;
 pub mod generator;
 pub mod save;
 pub mod render;
+pub mod terrain;
 
 pub struct World {
     seed: u32,

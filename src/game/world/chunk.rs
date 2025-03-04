@@ -1,11 +1,12 @@
 use crate::game::camera::Camera;
 use crate::game::world::render;
-use crate::game::world::tiles::terrain::{TerrainLayer, TerrainMaterial};
+use crate::game::world::terrain::{TerrainLayer, TerrainMaterial};
 use crate::game::world::tiles::{Orientation, Tile};
 use mvengine::rendering::control::RenderController;
 use mvutils::save::Savable;
 use mvutils::Savable;
 use std::fmt::{Debug, Formatter};
+use crate::game::world::generator::biome::Biome;
 
 pub const CHUNK_SIZE: usize = 64;
 pub const CHUNK_TILES: usize = CHUNK_SIZE * CHUNK_SIZE;
@@ -22,7 +23,8 @@ pub struct Chunk {
     pub chunk_world_x: i32,
     pub chunk_world_z: i32,
     pub terrain: TerrainLayer,
-    pub tiles: [Tile; CHUNK_TILES]
+    pub tiles: [Tile; CHUNK_TILES],
+    pub biomes: [Biome; CHUNK_TILES]
 }
 
 unsafe impl Send for Chunk {}
@@ -46,6 +48,7 @@ impl Chunk {
             chunk_world_z,
             terrain: TerrainLayer::new(),
             tiles: [0; CHUNK_TILES].map(|_| Tile::Empty),
+            biomes: [0; CHUNK_TILES].map(|_| Biome::Grassland),
         }
     }
 
@@ -58,6 +61,16 @@ impl Chunk {
         let tile_idx = x + z * CHUNK_SIZE;
         self.terrain.terrain[tile_idx] = material;
         self.terrain.orientation[tile_idx] = orientation;
+    }
+
+    pub fn set_biome_at(&mut self, x: usize, z: usize, biome: Biome) {
+        let tile_idx = x + z * CHUNK_SIZE;
+        self.biomes[tile_idx] = biome;
+    }
+
+    pub fn get_biome_at(&self, x: usize, z: usize) -> &Biome {
+        let tile_idx = x + z * CHUNK_SIZE;
+        &self.biomes[tile_idx]
     }
 
     pub fn set_terrain_at(&mut self, pos: TilePos, material: TerrainMaterial) {
@@ -87,7 +100,7 @@ impl Chunk {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default, Savable)]
 pub struct TilePos {
     pub raw: (i32, i32),
     pub in_chunk_x: usize,

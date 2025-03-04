@@ -3,7 +3,7 @@ use crate::game::screens::debug::DebugScreen;
 use crate::game::screens::entity::EntityScreen;
 use crate::game::world::chunk::{TilePos, CHUNK_SIZE};
 use crate::game::world::tiles::machines::bore::BoreMachine;
-use crate::game::world::tiles::terrain::TerrainMaterial;
+use crate::game::world::terrain::TerrainMaterial;
 use crate::game::world::tiles::{Tile, TILE_SIZE};
 use crate::game::world::World;
 use crate::WINDOW_SIZE;
@@ -146,7 +146,7 @@ impl WorldScreen {
         self.debug.start();
 
         if self.is_debug {
-            self.debug.draw(window, &self.player.camera);
+            self.debug.draw(window, &mut self.player);
         }
 
         self.frame += 0.003;

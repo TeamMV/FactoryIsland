@@ -1,13 +1,15 @@
 pub mod biome;
 pub mod terrain;
+mod tiles;
 
 use std::hash::{DefaultHasher, Hash, Hasher};
 use crate::game::world::chunk::{Chunk, CHUNK_SIZE};
 use crate::game::world::generator::biome::{Biome, BiomeGenerator};
 use crate::game::world::generator::terrain::TerrainGenerator;
-use crate::game::world::tiles::terrain::TerrainMaterial;
+use crate::game::world::terrain::TerrainMaterial;
 use crate::game::world::tiles::Orientation;
 use noise::{NoiseFn, Seedable};
+use crate::game::world::generator::tiles::TileGenerator;
 
 const BIOME_SCALE: f64 = 0.01;
 const TERRAIN_SCALE: f64 = 0.1;
@@ -16,6 +18,7 @@ pub struct GeneratorPipeline {
     seed: u32,
     biomes: BiomeGenerator,
     terrain: TerrainGenerator,
+    tiles: TileGenerator
 }
 
 impl GeneratorPipeline {
@@ -24,6 +27,7 @@ impl GeneratorPipeline {
             seed,
             biomes: BiomeGenerator::new(settings.biome_scale, seed),
             terrain: TerrainGenerator::new(settings.terrain_scale, seed),
+            tiles: TileGenerator::new(settings.terrain_scale, seed),
         }
     }
 
@@ -40,10 +44,14 @@ impl GeneratorPipeline {
                 let world_x = chunk.chunk_world_x * CHUNK_SIZE as i32 + x;
                 let world_z = chunk.chunk_world_z * CHUNK_SIZE as i32 + z;
                 let gen = self.generate(world_x, world_z);
+                if let Some(tile) = self.tiles.generate(world_x, world_z, &gen) {
+                    chunk.set_tile_at(tile, (world_x, world_z).into());
+                }
                 if chunk.generate_extra {
                     // do fancy shit
                 }
                 chunk.generate_terrain_at(x as usize, z as usize, gen.material, gen.orientation);
+                chunk.set_biome_at(x as usize, z as usize, gen.biome);
             }
         }
         chunk.finalize_generation();

@@ -54,7 +54,7 @@ impl WindowCallbacks for GameLoop {
         let mut settings = WorldSettings::from_seed("some_cool_seed");
         settings.terrain_scale *= 0.5;
         let world = World::create(settings);
-        let player = WorldPlayer::new("v22", R.texture.player, (TILE_SIZE, TILE_SIZE), world);
+        let player = WorldPlayer::new("v22", R.texture.nature_tree, (TILE_SIZE, TILE_SIZE), world);
         let screen = WorldScreen::new(window, player);
 
         let arc = Arc::new(Mutex::new(screen));
