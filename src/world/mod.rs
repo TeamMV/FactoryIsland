@@ -27,8 +27,11 @@ impl ClientWorld {
         }
     }
 
-    pub fn sync(&mut self, packet: TileSetPacket) {
-
+    pub fn sync(&mut self, packet: TileSetPacket, game: &Game) {
+        let tile = ClientTile::from_server_tile(packet.tile, game, false);
+        if let Some(chunk) = self.loaded.get_mut(&packet.pos.chunk_pos) {
+            chunk.tiles[Chunk::get_index(&packet.pos)] = Some(tile);
+        }
     }
 
     pub fn sync_chunk(&mut self, packet: ChunkDataPacket, game: &Game) {

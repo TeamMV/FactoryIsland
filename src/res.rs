@@ -19,6 +19,7 @@ r! {
             <texture name="terrain_water" src="textures/terrain/water.png"/>
 
             <texture name="tile_wood" src="textures/tiles/wood.png"/>
+            <texture name="tile_generator" src="textures/tiles/generator.png"/>
 
             <texture name="player" src="textures/player.png"/>
         </textures>
@@ -29,7 +30,10 @@ r! {
             <font name="default" src="fonts/data.font" atlas="fonts/atlas.png"/>
         </fonts>
         <tilesets>
-
+            <tileset name="lamp" atlas="textures/tiles/lamp.png" width="64" height="64" count="2">
+                <entry name="on" index="0"/>
+                <entry name="off" index="1"/>
+            </tileset>
         </tilesets>
         <animations>
             

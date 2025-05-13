@@ -10,14 +10,16 @@ use std::env;
 use std::path::{Path, PathBuf};
 use bytebuffer::ByteBuffer;
 use log::error;
+use mvengine::window::Window;
 use mvutils::bytebuffer::ByteBufferExtras;
 use mvutils::hashers::U64IdentityHasher;
 use mvutils::once::CreateOnce;
 use mvutils::save::Savable;
 use api::registry::Registry;
-use api::server::packets::common::{ClientDataPacket, ServerStatePacket};
+use api::server::packets::common::{ClientDataPacket, ServerStatePacket, TileKind};
 use api::world::tiles::terrain::TerrainTile;
 use crate::mods::LocalModManager;
+use crate::ui::display::TileSelection;
 
 pub struct Game {
     pub world: ClientWorld,
@@ -25,7 +27,10 @@ pub struct Game {
     pub other_players: HashMap<ClientId, ClientPlayer, U64IdentityHasher>,
     pub conf_dir: PathBuf,
     pub client_resources: LocalModManager,
+    pub available_tiles: Vec<TileKind>,
     pub(crate) tile_size: i32,
+    pub selection: Option<TileSelection>,
+    prepare_selection: bool
 }
 
 impl Game {
@@ -45,7 +50,10 @@ impl Game {
             other_players: HashMap::with_hasher(U64IdentityHasher::default()),
             conf_dir: full,
             client_resources: local_mods,
+            available_tiles: vec![],
             tile_size: 50,
+            selection: None,
+            prepare_selection: false,
         }
     }
     
@@ -56,8 +64,22 @@ impl Game {
         };
     }
     
+    pub fn on_frame(&mut self, window: &mut Window) {
+        if self.prepare_selection {
+            self.selection = Some(TileSelection::new(window, self.available_tiles.iter().cloned()));
+            if let Some(sel) = &self.selection {
+                sel.open(window);
+            }
+            self.prepare_selection = false;
+        }
+        if let Some(sel) = &mut self.selection {
+            sel.check_events();
+        }
+    }
+    
     pub fn on_server_state(&mut self, packet: ServerStatePacket) {
-        
+        self.available_tiles = packet.tiles;
+        self.prepare_selection = true;
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {

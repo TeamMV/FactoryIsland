@@ -1,26 +1,26 @@
-use std::ops::Deref;
+pub mod resources;
+
+use crate::game::Game;
+use crate::res::R;
+use crate::world::terrain_tex_mapper::get_terrain_drawable;
+use crate::world::tile_tex_mapper::get_tile_drawable;
+use api::world::chunk::ToClientObject;
+use api::world::tiles::pos::TilePos;
+use api::world::tiles::terrain::ObjectSource;
+use api::world::tiles::Orientation;
 use mvengine::color::RgbColor;
 use mvengine::graphics::animation::GlobalAnimation;
 use mvengine::graphics::comp::Drawable;
 use mvengine::graphics::tileset::TileSet;
 use mvengine::math::vec::Vec4;
-use mvengine::rendering::{InputVertex, Quad, RenderContext, Transform};
 use mvengine::rendering::texture::Texture;
+use mvengine::rendering::{InputVertex, Quad, RenderContext, Transform};
 use mvengine::ui::context::UiResources;
-use mvengine::ui::elements::events::UiClickAction::Click;
 use mvengine::ui::geometry::SimpleRect;
 use mvengine::ui::res::OrMissingTexture;
 use mvutils::unsafe_utils::Unsafe;
 use mvutils::utils::TetrahedronOp;
-use api::world::chunk::ToClientObject;
-use api::world::tiles::Orientation;
-use api::world::tiles::pos::TilePos;
-use api::world::tiles::terrain::{ObjectSource, TerrainTile};
-use api::world::tiles::tiles::{Tile, TileType};
-use crate::game::Game;
-use crate::res::R;
-use crate::world::terrain_tex_mapper::get_terrain_drawable;
-use crate::world::tile_tex_mapper::get_tile_drawable;
+use std::ops::Deref;
 
 pub trait TileDraw {
     fn draw(&self, ctx: &mut impl RenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32);
@@ -94,11 +94,12 @@ impl ClientTile {
 impl ClientTile {
     pub fn from_server_tile(server_tile: ToClientObject, game: &Game, is_terrain: bool) -> Self {
         let orientation = server_tile.orientation;
+        let state = server_tile.state;
         match &server_tile.source {
             ObjectSource::Vanilla => {
                 let drawable = is_terrain.yn(
                     get_terrain_drawable(server_tile.id as usize),
-                    get_tile_drawable(server_tile.id as usize)
+                    get_tile_drawable(server_tile.id as usize, state)
                 );
                 let tex = ClientDrawable::from_drawable(drawable, R.deref().deref());
                 Self {
@@ -107,11 +108,11 @@ impl ClientTile {
                     orientation,
                 }
             }
-            ObjectSource::Mod(modid, drawable) => {
+            ObjectSource::Mod(modid, mapper) => {
                 let tex = if let Some(res) = game.client_resources.get(modid) {
                     //this is fine cuz u cannot unload mods at runtime
                     let res = unsafe { Unsafe::cast_static(res) };
-                    ClientDrawable::from_drawable(drawable.clone(), res)
+                    ClientDrawable::from_drawable(mapper.map(state), res)
                 } else {
                     ClientDrawable::Texture(R.resolve_texture(R.mv.texture.missing).unwrap())
                 };

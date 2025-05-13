@@ -139,6 +139,8 @@ impl WindowCallbacks for GameHandler {
         if window.input.was_action(ESCAPE) { 
             self.ui_manager.goto(UI_ESCAPE_SCREEN, window);
         }
+        
+        self.game.on_frame(window);
 
         OpenGLRenderer::clear();
         self.shader.use_program();
@@ -197,7 +199,8 @@ impl ClientHandler<ClientBoundPacket> for GameHandler {
     fn on_packet(&mut self, packet: ClientBoundPacket) {
         match packet {
             ClientBoundPacket::TileSet(packet) => {
-                self.game.world.sync(packet);
+                let unsafe_game = unsafe { Unsafe::cast_static(&self.game) };
+                self.game.world.sync(packet, unsafe_game);
             }
             ClientBoundPacket::ChunkData(packet) => {
                 let unsafe_game = unsafe { Unsafe::cast_static(&self.game) };

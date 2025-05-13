@@ -1,6 +1,7 @@
 pub mod manager;
 pub mod mainscreen;
-mod escape_screen;
+pub mod escape_screen;
+pub mod display;
 
 use log::error;
 use mvengine::rendering::RenderContext;
