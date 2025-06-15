@@ -22,6 +22,7 @@ r! {
             <texture name="tile_generator" src="textures/tiles/generator.png"/>
 
             <texture name="player" src="textures/player.png"/>
+            <texture name="bg" src="textures/bg.png"/>
         </textures>
         <adaptives>
 
@@ -38,5 +39,8 @@ r! {
         <animations>
             
         </animations>
+        <drawables>
+            <drawable name="bg" type="texture" ref="bg"/>
+        </drawables>
     </resources>
 }

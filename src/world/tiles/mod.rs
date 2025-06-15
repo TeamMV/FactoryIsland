@@ -10,7 +10,6 @@ use api::world::tiles::terrain::ObjectSource;
 use api::world::tiles::Orientation;
 use mvengine::color::RgbColor;
 use mvengine::graphics::animation::GlobalAnimation;
-use mvengine::graphics::comp::Drawable;
 use mvengine::graphics::tileset::TileSet;
 use mvengine::math::vec::Vec4;
 use mvengine::rendering::texture::Texture;
@@ -21,6 +20,7 @@ use mvengine::ui::res::OrMissingTexture;
 use mvutils::unsafe_utils::Unsafe;
 use mvutils::utils::TetrahedronOp;
 use std::ops::Deref;
+use mvengine::graphics::Drawable;
 
 pub trait TileDraw {
     fn draw(&self, ctx: &mut impl RenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32);
@@ -177,7 +177,8 @@ impl ClientDrawable {
                 } else {
                     ClientDrawable::Texture(R.resolve_texture(R.mv.texture.missing).unwrap())
                 }
-            }
+            },
+            Drawable::Color(_) => unimplemented!()
         }
     }
 }

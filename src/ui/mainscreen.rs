@@ -1,53 +1,53 @@
+use mvengine::ui::context::UiResources;
 use crate::gameloop::GameHandler;
+use crate::res::R;
 use crate::ui::GameUiCallbacks;
-use mvengine::color::RgbColor;
+use mvengine::color::parse::parse_color;
+use mvengine::graphics::Drawable;
 use mvengine::input::consts::MouseButton;
 use mvengine::net::client::Client;
+use mvengine::ui::attributes::UiState;
 use mvengine::ui::elements::button::Button;
 use mvengine::ui::elements::div::Div;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::textbox::TextBox;
 use mvengine::ui::elements::UiElementStub;
 use mvengine::ui::elements::{Element, UiElement};
-use mvengine::ui::styles::{ChildAlign, Position, SideStyle, UiStyle, UiValue, Unit};
-use mvengine::utils::fuckumaxfornotmakingshitpub::ThreadSafe;
+use mvengine::ui::styles::enums::{BackgroundRes, ChildAlign, Position};
+use mvengine::ui::styles::groups::SideStyle;
+use mvengine::ui::styles::{UiStyle, UiValue};
 use mvengine::window::Window;
-use mvengine::{enum_val_ref_mut, expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
+use mvengine::{expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
+use mvengine_proc::resolve_resource;
+use mvengine_proc::style_expr;
 use mvengine_proc::ui;
+use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
+use mvutils::thread::ThreadSafe;
 use std::ops::Deref;
 
 pub struct Mainscreen {
     elem: ThreadSafe<Element>,
     connect_btn: ThreadSafe<Element>,
-    server_ip: State<String>
+    server_ip: UiState
 }
 
 impl Mainscreen {
     pub fn new(window: &Window) -> Self {
-        let mut main_style = UiStyle::default();
-        modify_style!(main_style.position = UiValue::Just(Position::Absolute));
-        modify_style!(main_style.width = UiValue::Just(window.info().width as i32));
-        modify_style!(main_style.height = UiValue::Just(window.info().height as i32));
-        modify_style!(main_style.child_align_x = UiValue::Just(ChildAlign::Middle));
-        modify_style!(main_style.child_align_y = UiValue::Just(ChildAlign::Middle));
-        main_style.padding = SideStyle::all_i32(0);
-        main_style.margin = SideStyle::all_i32(0);
+        let main_style = style_expr!("position: absolute; width: 100%; height: 100%; child_align_x: middle; child_align_y: middle; background.resource: texture; background.texture: @R.drawable/bg; margin: none; padding: none;");
 
         let vert_style = UiStyle::stack_vertical();
-
-        let mut widget_style = UiStyle::default();
-        modify_style!(widget_style.width = UiValue::Measurement(Unit::BeardFortnight(50.0)));
-        modify_style!(widget_style.height = UiValue::Measurement(Unit::CM(5.0)));
+        
+        let widget_style = style_expr!("width: 5cm; height: 1cm;");
 
         let mut hover_style = widget_style.clone();
-        modify_style!(hover_style.background.color = UiValue::Just(RgbColor::red()));
+        modify_style!(hover_style.background.color = UiValue::Just(parse_color("#3f48cc").unwrap()));
 
         let elem = ui! {
             <Ui context={window.ui().context()}>
                 <Div id="mainscreen" style={main_style}>
                     <Div style={vert_style}>
-                        <TextBox style={widget_style.clone()} id="ip_input" placeholder="SeverIP"/>
+                        <TextBox style={widget_style.clone()} id="ip_input" placeholder="SeverIP" content="127.0.0.1:4040"/>
                         <Button style={widget_style} id="connect">Connect</Button>
                     </Div>
                 </Div>
@@ -61,7 +61,7 @@ impl Mainscreen {
             btn.body_mut().set_hover_style(Some(hover_style.clone()));
         });
         
-        let mut content = State::new(String::new());
+        let mut content = State::new(String::new()).map_identity();
         
         expect_inner_element_by_id_mut!(elem, TextBox, "ip_input", textbox => {
             textbox.body_mut().set_fade_time(200);

@@ -1,7 +1,7 @@
+use mvengine::graphics::Drawable;
 use crate::res::R;
 use api::tileset;
 use api::world::tiles::resources::ClientTileRes;
-use mvengine::graphics::comp::Drawable;
 use mvutils::lazy;
 
 lazy! {

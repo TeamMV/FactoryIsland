@@ -1,9 +1,9 @@
-use mvengine::ui::elements::UiElementStub;
-use crate::ui::{mainscreen, GameUi};
-use mvengine::window::Window;
 use crate::gameloop::GameHandler;
 use crate::ui::escape_screen::EscapeScreen;
 use crate::ui::mainscreen::Mainscreen;
+use crate::ui::GameUi;
+use mvengine::ui::elements::UiElementStub;
+use mvengine::window::Window;
 
 pub const AMT_UIS: usize = 2;
 

@@ -89,6 +89,7 @@ impl WindowCallbacks for GameHandler {
             R::initialize();
             window.ui_mut().init(R.deref().deref());
             
+            self.game.create_ui(window);
             self.game.load_client_res();
 
             OpenGLRenderer::prepare(window);
@@ -137,10 +138,11 @@ impl WindowCallbacks for GameHandler {
         }
         
         if window.input.was_action(ESCAPE) { 
+            println!("paused game");
             self.ui_manager.goto(UI_ESCAPE_SCREEN, window);
         }
         
-        self.game.on_frame(window);
+        self.game.on_frame(window, &self.client);
 
         OpenGLRenderer::clear();
         self.shader.use_program();

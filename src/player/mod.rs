@@ -1,3 +1,4 @@
+use mvengine::graphics::Drawable;
 use crate::camera::Camera;
 use crate::drawutils;
 use crate::gameloop::FactoryIslandClient;
@@ -5,7 +6,6 @@ use crate::res::R;
 use api::server::packets::player::PlayerMovePacket;
 use api::server::ServerBoundPacket;
 use api::world::{resolve_unit, TileUnit};
-use mvengine::graphics::comp::Drawable;
 use mvengine::rendering::RenderContext;
 use mvengine::ui::geometry::SimpleRect;
 use mvengine::ui::rendering::adaptive::AdaptiveFill;

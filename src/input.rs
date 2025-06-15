@@ -5,7 +5,7 @@ use mvengine::input::Input;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use mvengine::input::consts::Key;
+use mvengine::input::consts::{Key, MouseButton};
 
 pub const MOVE_FORWARD: &str = "move_forward";
 pub const MOVE_BACK: &str = "move_back";

@@ -1,25 +1,37 @@
 use crate::gameloop::FactoryIslandClient;
 use crate::input;
+use crate::mods::LocalModManager;
 use crate::player::ClientPlayer;
+use crate::ui::display::TileSelection;
 use crate::world::ClientWorld;
-use mvengine::input::Input;
-use mvengine::net::server::ClientId;
-use mvengine::rendering::RenderContext;
-use std::collections::HashMap;
-use std::env;
-use std::path::{Path, PathBuf};
+use api::registry::Registry;
+use api::server::packets::common::{ClientDataPacket, ServerStatePacket, TileKind};
+use api::server::packets::world::TileSetFromClientPacket;
+use api::server::ServerBoundPacket;
+use api::world::tiles::pos::TilePos;
+use api::world::tiles::terrain::TerrainTile;
+use api::world::tiles::Orientation;
 use bytebuffer::ByteBuffer;
 use log::error;
+use mvengine::input::consts::MouseButton;
+use mvengine::input::Input;
+use mvengine::modify_style;
+use mvengine::net::server::ClientId;
+use mvengine::rendering::RenderContext;
+use mvengine::ui::elements::div::Div;
+use mvengine::ui::elements::Element;
+use mvengine::ui::elements::UiElementStub;
 use mvengine::window::Window;
+use mvengine_proc::style_expr;
+use mvengine_proc::ui;
 use mvutils::bytebuffer::ByteBufferExtras;
 use mvutils::hashers::U64IdentityHasher;
 use mvutils::once::CreateOnce;
 use mvutils::save::Savable;
-use api::registry::Registry;
-use api::server::packets::common::{ClientDataPacket, ServerStatePacket, TileKind};
-use api::world::tiles::terrain::TerrainTile;
-use crate::mods::LocalModManager;
-use crate::ui::display::TileSelection;
+use mvutils::thread::ThreadSafe;
+use std::collections::HashMap;
+use std::env;
+use std::path::{Path, PathBuf};
 
 pub struct Game {
     pub world: ClientWorld,
@@ -30,7 +42,9 @@ pub struct Game {
     pub available_tiles: Vec<TileKind>,
     pub(crate) tile_size: i32,
     pub selection: Option<TileSelection>,
-    prepare_selection: bool
+    prepare_selection: bool,
+
+    click_area: CreateOnce<ThreadSafe<Element>>
 }
 
 impl Game {
@@ -54,7 +68,18 @@ impl Game {
             tile_size: 50,
             selection: None,
             prepare_selection: false,
+            click_area: CreateOnce::new(),
         }
+    }
+    
+    pub fn create_ui(&mut self, window: &Window) {
+        let click_area = ui! {
+            <Ui context={window.ui().context()}>
+                <Div id="click_area" style="padding: none; margin: none; position: absolute; x: 0; y: 0; width: 100%; height: 100%;"/>
+            </Ui>
+        };
+        
+        self.click_area.create(|| ThreadSafe::new(click_area));
     }
     
     pub fn load_client_res(&mut self) {
@@ -64,11 +89,12 @@ impl Game {
         };
     }
     
-    pub fn on_frame(&mut self, window: &mut Window) {
+    pub fn on_frame(&mut self, window: &mut Window, client: &Option<FactoryIslandClient>) {
         if self.prepare_selection {
+            println!("open sel");
             self.selection = Some(TileSelection::new(window, self.available_tiles.iter().cloned()));
             if let Some(sel) = &self.selection {
-                sel.open(window);
+                sel.open(window, self.click_area.as_ref().clone());
             }
             self.prepare_selection = false;
         }
@@ -127,6 +153,23 @@ impl Game {
         }
         if has_moved {
             self.player.broadcast_position(client);
+        }
+
+        if let Some(event) = &self.click_area.get().state().events.click_event {
+            if event.button == MouseButton::Left {
+                if let Some(sel) = &self.selection {
+                    if let Some(tile) = sel.selected_tile() {
+                        let pos = TilePos::from_screen((input.mouse_x, input.mouse_y), &self.player.camera.view_area, self.tile_size);
+                        client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
+                            pos,
+                            tile_id: tile.id,
+                            tile_state: 0, //Idk use the default??? lets just say zero is ALWAYS a default lmao
+                            orientation: Orientation::North,
+                        }));
+                        println!("set tile");
+                    }
+                }
+            }
         }
     }
 

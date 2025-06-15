@@ -7,8 +7,8 @@ use log::error;
 use mvengine::rendering::RenderContext;
 use mvengine::ui::elements::{Element, UiElementCallbacks, UiElementStub};
 use mvengine::ui::rendering::ctx::DrawContext2D;
-use mvengine::utils::fuckumaxfornotmakingshitpub::ThreadSafe;
 use mvengine::window::Window;
+use mvutils::thread::ThreadSafe;
 use crate::gameloop::GameHandler;
 
 pub struct GameUi {

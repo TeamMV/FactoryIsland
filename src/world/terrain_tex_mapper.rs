@@ -1,4 +1,4 @@
-use mvengine::graphics::comp::Drawable;
+use mvengine::graphics::Drawable;
 use crate::res::R;
 
 pub fn get_terrain_drawable(id: usize) -> Drawable {
