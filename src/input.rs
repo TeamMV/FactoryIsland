@@ -12,6 +12,7 @@ pub const MOVE_BACK: &str = "move_back";
 pub const MOVE_LEFT: &str = "move_left";
 pub const MOVE_RIGHT: &str = "move_right";
 pub const ESCAPE: &str = "escape";
+pub const CHAT: &str = "chat";
 
 pub const PATH: &str = ".factoryisland/";
 
@@ -25,6 +26,7 @@ impl InputManager {
         actions.create_action(MOVE_LEFT);
         actions.create_action(MOVE_RIGHT);
         actions.create_action(ESCAPE);
+        actions.create_action(CHAT);
 
         //defaults, get overridden by file
         actions.bind_action(MOVE_FORWARD, vec![RawInput::KeyPress(Key::W)]);
@@ -32,6 +34,7 @@ impl InputManager {
         actions.bind_action(MOVE_LEFT, vec![RawInput::KeyPress(Key::A)]);
         actions.bind_action(MOVE_RIGHT, vec![RawInput::KeyPress(Key::D)]);
         actions.bind_action(ESCAPE, vec![RawInput::KeyPress(Key::Escape)]);
+        actions.bind_action(CHAT, vec![RawInput::KeyPress(Key::Return)]);
 
         let dir = game.configuration_directory();
         if let Ok(_) = input.load_actions(dir) {

@@ -32,6 +32,8 @@ use mvutils::thread::ThreadSafe;
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
+use mvengine::ui::elements::events::UiClickAction;
+use crate::ui::display::chat::Chat;
 
 pub struct Game {
     pub world: ClientWorld,
@@ -44,7 +46,8 @@ pub struct Game {
     pub selection: Option<TileSelection>,
     prepare_selection: bool,
 
-    click_area: CreateOnce<ThreadSafe<Element>>
+    click_area: CreateOnce<ThreadSafe<Element>>,
+    pub chat: CreateOnce<Chat>
 }
 
 impl Game {
@@ -69,16 +72,21 @@ impl Game {
             selection: None,
             prepare_selection: false,
             click_area: CreateOnce::new(),
+            chat: CreateOnce::new(),
         }
     }
-    
-    pub fn create_ui(&mut self, window: &Window) {
+
+    pub fn create_ui(&mut self, window: &mut Window) {
         let click_area = ui! {
             <Ui context={window.ui().context()}>
-                <Div id="click_area" style="padding: none; margin: none; position: absolute; x: 0; y: 0; width: 100%; height: 100%;"/>
+                <Div id="click_area" style="padding: none; margin: none; position: absolute; x: 0; y: 0; width: 100%; height: 100%; background.resource: none; border.resource: none;"/>
             </Ui>
         };
         
+        self.chat.create(|| Chat::new(window));
+        
+        window.ui_mut().add_root(click_area.clone());
+
         self.click_area.create(|| ThreadSafe::new(click_area));
     }
     
@@ -132,34 +140,40 @@ impl Game {
         self.player.draw(ctx, self.tile_size);
     }
 
-    pub fn check_inputs(&mut self, input: &Input, client: &mut FactoryIslandClient) {
+    pub fn check_inputs(&mut self, window: &mut Window, client: &mut FactoryIslandClient) {
         let mut has_moved = false;
         let speed = 0.4;
-        if input.is_action(input::MOVE_FORWARD) {
-            self.player.move_by((0.0, speed), self.tile_size);
-            has_moved = true;
+        if !self.chat.open {
+            if window.input.is_action(input::MOVE_FORWARD) {
+                self.player.move_by((0.0, speed), self.tile_size);
+                has_moved = true;
+            }
+            if window.input.is_action(input::MOVE_BACK) {
+                self.player.move_by((0.0, -speed), self.tile_size);
+                has_moved = true;
+            }
+            if window.input.is_action(input::MOVE_LEFT) {
+                self.player.move_by((-speed, 0.0), self.tile_size);
+                has_moved = true;
+            }
+            if window.input.is_action(input::MOVE_RIGHT) {
+                self.player.move_by((speed, 0.0), self.tile_size);
+                has_moved = true;
+            }
         }
-        if input.is_action(input::MOVE_BACK) {
-            self.player.move_by((0.0, -speed), self.tile_size);
-            has_moved = true;
+        if window.input.was_action(input::CHAT) { 
+            self.chat.toggle(window, client);
         }
-        if input.is_action(input::MOVE_LEFT) {
-            self.player.move_by((-speed, 0.0), self.tile_size);
-            has_moved = true;
-        }
-        if input.is_action(input::MOVE_RIGHT) {
-            self.player.move_by((speed, 0.0), self.tile_size);
-            has_moved = true;
-        }
+        
         if has_moved {
             self.player.broadcast_position(client);
         }
 
         if let Some(event) = &self.click_area.get().state().events.click_event {
-            if event.button == MouseButton::Left {
+            if event.button == MouseButton::Left && event.base.action == UiClickAction::Click {
                 if let Some(sel) = &self.selection {
                     if let Some(tile) = sel.selected_tile() {
-                        let pos = TilePos::from_screen((input.mouse_x, input.mouse_y), &self.player.camera.view_area, self.tile_size);
+                        let pos = TilePos::from_screen((window.input.mouse_x, window.input.mouse_y), &self.player.camera.view_area, self.tile_size);
                         client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
                             pos,
                             tile_id: tile.id,

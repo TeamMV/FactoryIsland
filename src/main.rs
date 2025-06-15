@@ -16,6 +16,8 @@ mod rendering;
 mod ui;
 mod uistyles;
 
+use std::{env, fs};
+use std::fs::{File, OpenOptions};
 use crate::gameloop::GameHandler;
 use log::LevelFilter;
 use mvengine::net::client::ClientHandler;
@@ -23,8 +25,27 @@ use mvengine::utils::Expect2;
 use mvengine::window::{Window, WindowCreateInfo};
 use mvutils::save::Savable;
 use std::io::stdout;
+use std::path::PathBuf;
+use mvutils::utils::Time;
 
-fn main() {    
+fn get_logs_path() -> Option<PathBuf> {
+    if let Ok(appdata) = env::var("APPDATA") {
+        let path = PathBuf::from(appdata)
+            .join(".factoryisland")
+            .join("logs");
+        Some(path)
+    } else {
+        None
+    }
+}
+
+fn main() {
+
+    //let mut logpath = get_logs_path().unwrap();
+    //fs::create_dir_all(&logpath);
+    //logpath.push(format!("{}.log", u128::time_millis()));
+    //let file = OpenOptions::new().write(true).create(true).truncate(true).open(&logpath).unwrap();
+
     mvlogger::init(stdout(), LevelFilter::Trace);
     let handler = GameHandler::new();
     let mut info = WindowCreateInfo::default();

@@ -1,3 +1,5 @@
+pub mod chat;
+
 use mvengine::color::RgbColor;
 use mvengine::ui::styles::{UiStyle, UiValue, EMPTY_STYLE};
 use mvengine::ui::elements::button::Button;

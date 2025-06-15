@@ -1,23 +1,20 @@
-use mvengine::ui::context::UiResources;
-use crate::res::R;
-use mvengine_proc::resolve_resource;
 use crate::gameloop::GameHandler;
+use crate::res::R;
 use crate::ui::manager::UI_MAIN_SCREEN;
 use crate::ui::GameUiCallbacks;
 use mvengine::color::RgbColor;
 use mvengine::input::consts::MouseButton;
 use mvengine::net::DisconnectReason;
+use mvengine::ui::context::UiResources;
 use mvengine::ui::elements::button::Button;
 use mvengine::ui::elements::div::Div;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::Element;
 use mvengine::ui::elements::UiElementStub;
+use mvengine::ui::styles::{UiStyle, UiValue};
 use mvengine::window::Window;
 use mvengine::{expect_element_by_id, modify_style};
-use mvengine::ui::styles::{UiStyle, UiValue};
-use mvengine::ui::styles::enums::{ChildAlign, Position};
-use mvengine::ui::styles::groups::SideStyle;
-use mvengine::ui::styles::unit::Unit;
+use mvengine_proc::resolve_resource;
 use mvengine_proc::{style_expr, ui};
 use mvutils::thread::ThreadSafe;
 
@@ -70,7 +67,6 @@ impl GameUiCallbacks for EscapeScreen {
         if let Some(event) = &self.back_btn.as_ref().get().state().events.click_event {
             if let MouseButton::Left = event.button {
                 if let UiClickAction::Click = event.base.action {
-                    println!("click back to game");
                     game_handler.ui_manager.close_all(window);
                 }
             }
@@ -83,7 +79,6 @@ impl GameUiCallbacks for EscapeScreen {
                         client.disconnect(DisconnectReason::Disconnected);
                     }
                     game_handler.client = None;
-                    println!("click disconnect");
                     game_handler.ui_manager.goto(UI_MAIN_SCREEN ,window);
                 }
             }

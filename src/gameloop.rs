@@ -88,7 +88,7 @@ impl WindowCallbacks for GameHandler {
         unsafe {
             R::initialize();
             window.ui_mut().init(R.deref().deref());
-            
+
             self.game.create_ui(window);
             self.game.load_client_res();
 
@@ -134,11 +134,10 @@ impl WindowCallbacks for GameHandler {
 
     fn draw(&mut self, window: &mut Window, delta_t: f64) {
         if let Some(client) = &mut self.client {
-            self.game.check_inputs(&window.input, client);
+            self.game.check_inputs(window, client);
         }
         
-        if window.input.was_action(ESCAPE) { 
-            println!("paused game");
+        if window.input.was_action(ESCAPE) {
             self.ui_manager.goto(UI_ESCAPE_SCREEN, window);
         }
         
@@ -242,6 +241,9 @@ impl ClientHandler<ClientBoundPacket> for GameHandler {
             }
             ClientBoundPacket::ChunkUnload(packet) => {
                 self.game.world.drop_chunk(packet.pos);
+            }
+            ClientBoundPacket::OtherPlayerChat(packet) => {
+                self.game.chat.push_message(packet);
             }
         }
     }
