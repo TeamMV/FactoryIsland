@@ -1,20 +1,17 @@
-use mvengine::ui::context::UiResources;
 use crate::gameloop::GameHandler;
 use crate::res::R;
 use crate::ui::GameUiCallbacks;
 use mvengine::color::parse::parse_color;
-use mvengine::graphics::Drawable;
 use mvengine::input::consts::MouseButton;
 use mvengine::net::client::Client;
 use mvengine::ui::attributes::UiState;
+use mvengine::ui::context::UiResources;
 use mvengine::ui::elements::button::Button;
 use mvengine::ui::elements::div::Div;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::textbox::TextBox;
 use mvengine::ui::elements::UiElementStub;
 use mvengine::ui::elements::{Element, UiElement};
-use mvengine::ui::styles::enums::{BackgroundRes, ChildAlign, Position};
-use mvengine::ui::styles::groups::SideStyle;
 use mvengine::ui::styles::{UiStyle, UiValue};
 use mvengine::window::Window;
 use mvengine::{expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
@@ -57,15 +54,15 @@ impl Mainscreen {
         let connect_btn = expect_element_by_id!(elem, "connect");
 
         expect_inner_element_by_id_mut!(elem, Button, "connect", btn => {
-            btn.body_mut().set_fade_time(200);
-            btn.body_mut().set_hover_style(Some(hover_style.clone()));
+            //btn.body_mut().set_fade_time(200);
+            //btn.body_mut().set_hover_style(Some(hover_style.clone()));
         });
         
         let mut content = State::new(String::new()).map_identity();
         
         expect_inner_element_by_id_mut!(elem, TextBox, "ip_input", textbox => {
-            textbox.body_mut().set_fade_time(200);
-            textbox.body_mut().set_hover_style(Some(hover_style));
+            //textbox.body_mut().set_fade_time(200);
+            //textbox.body_mut().set_hover_style(Some(hover_style));
             content = textbox.content();
         });
 

@@ -13,13 +13,12 @@ use mvutils::once::CreateOnce;
 use parking_lot::RwLock;
 use std::ops::Deref;
 use std::sync::Arc;
+use std::time::Instant;
 use log::{error, info};
 use mvengine::color::RgbColor;
 use mvengine::input::Input;
 use mvengine::rendering::post::OpenGLPostProcessRenderer;
-use mvengine::ui::rendering::ctx::DrawContext2D;
 use mvengine::ui::rendering::UiRenderer;
-use mvengine::ui::timing::TIMING_MANAGER;
 use mvutils::remake::Remake;
 use mvutils::unsafe_utils::Unsafe;
 use api::registry;
@@ -49,7 +48,7 @@ pub struct GameHandler {
     pub game: Game,
 
     pub ui_manager: CreateOnce<GameUiManager>,
-    pub draw_ctx: CreateOnce<DrawContext2D>,
+    pub draw_ctx: CreateOnce<UiRenderer>,
 
     pub cloud_frame: f32
 }
@@ -121,10 +120,7 @@ impl WindowCallbacks for GameHandler {
             self.ui_manager.create(|| manager);
             
             let renderer = UiRenderer::new(window);
-            let ctx = DrawContext2D::new(renderer);
-            self.draw_ctx.create(|| ctx);
-            
-            window.disable_depth_test();
+            self.draw_ctx.create(|| renderer);
         }
     }
 
@@ -136,13 +132,13 @@ impl WindowCallbacks for GameHandler {
         if let Some(client) = &mut self.client {
             self.game.check_inputs(window, client);
         }
-        
         if window.input.was_action(ESCAPE) {
             self.ui_manager.goto(UI_ESCAPE_SCREEN, window);
         }
-        
+
         self.game.on_frame(window, &self.client);
 
+        OpenGLRenderer::enable_depth_test();
         OpenGLRenderer::clear();
         self.shader.use_program();
         self.game.draw_world(&mut *self.controller);
@@ -155,20 +151,23 @@ impl WindowCallbacks for GameHandler {
         self.shaders.clouds.uniform_1f("FRAME", self.cloud_frame);
         self.post_renderer.run_shader(&mut self.shaders.clouds);
         self.post_renderer.draw_to_screen();
-        
+
         self.game.draw_players(&mut *self.controller);
         self.shader.use_program();
         self.controller.draw(window, &self.mv_camera, &mut *self.renderer, &mut self.shader);
 
-
         let unsafe_self = unsafe { Unsafe::cast_mut_static(self) };
         self.ui_manager.check_events(window, unsafe_self);
-        window.ui_mut().compute_styles_and_draw(&mut self.draw_ctx);
+
+        let a = window.area();
+        window.ui_mut().draw(&mut self.draw_ctx, &a);
         self.draw_ctx.draw(window);
 
         self.cloud_frame += 0.003;
+    }
 
-        unsafe { TIMING_MANAGER.post_frame(1.0, 0); }
+    fn post_draw(&mut self, window: &mut Window, delta_t: f64) {
+        mvengine::debug::print_summary(1000);
     }
 
     fn exiting(&mut self, window: &mut Window) {
@@ -183,6 +182,7 @@ impl WindowCallbacks for GameHandler {
         self.game.resize(width, height);
         *self.renderer = unsafe { OpenGLRenderer::initialize(window) };
         self.draw_ctx.resize(window);
+        window.ui_mut().compute_styles(&mut *self.draw_ctx);
     }
 }
 

@@ -2,43 +2,24 @@ use crate::res::R;
 use api::world::{resolve_unit, TileUnit};
 use api::world::tiles::pos::TilePos;
 use mvengine::rendering::{Quad, RenderContext};
-use mvengine::ui::geometry::SimpleRect;
+use mvengine::ui::geometry::{Rect, SimpleRect};
 use mvengine::ui::rendering::adaptive::AdaptiveFill;
-use mvengine::ui::rendering::ctx;
 use std::ops::Deref;
+use mvengine::ui::geometry::shape::{shapes, SF_TEXTURE};
 use crate::drawutils;
 
 pub fn rect(ctx: &mut impl RenderContext, x: i32, y: i32, w: i32, h: i32, fill: AdaptiveFill, z: f32) {
-    let c = ctx.controller();
-    let rect = match fill {
+    match fill {
         AdaptiveFill::Color(col) => {
-            ctx::rectangle()
-                .xywh(x, y, w, h)
-                .color(col)
-                .z(z)
-                .create()
+            let rect = shapes::rectangle0(x, y, w, h);
+            rect.draw(ctx, |v| {
+                v.color = col.as_vec4();
+            });
         }
         AdaptiveFill::Drawable(drawable) => {
-            let (texture, uv) = drawable.get_texture_or_default(R.deref().deref());
-            ctx::rectangle()
-                .xywh(x, y, w, h)
-                .texture(ctx::texture()
-                    .source(Some(texture.clone()))
-                    .uv(uv)
-                )
-                .z(1.0)
-                .create()
+            drawable.draw(ctx, Rect::simple(x, y, w, h), R.deref().deref());
         }
     };
-
-    c.push_quad(Quad {
-        points: [
-            rect.triangles[0].points[0].clone(),
-            rect.triangles[0].points[1].clone(),
-            rect.triangles[0].points[2].clone(),
-            rect.triangles[1].points[2].clone(),
-        ],
-    });
 }
 
 pub fn draw_in_world(ctx: &mut impl RenderContext, view_area: &SimpleRect, pos: TileUnit, size: TileUnit, fill: AdaptiveFill, tile_size: i32, y: f32) {

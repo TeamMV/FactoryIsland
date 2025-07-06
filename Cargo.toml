@@ -8,7 +8,7 @@ api = { path = "Api", package = "Api" }
 
 mvlogger = "0.4.0"
 mvutils = "1.4.4"
-mvengine = { path = "../MVEngine" }
+mvengine = { path = "../MVEngine", features = ["timed"] }
 mvengine_proc = { path = "../MVEngine/Proc", package = "mvengine-proc-macro" }
 
 log = "0.4.25"

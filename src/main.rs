@@ -49,7 +49,7 @@ fn main() {
     mvlogger::init(stdout(), LevelFilter::Trace);
     let handler = GameHandler::new();
     let mut info = WindowCreateInfo::default();
-    info.vsync = true;
+    info.vsync = false;
     info.title = "FactoryIsland".to_string();
     let window = Window::new(info);
     window.run(handler).expect2("Cannot start window for game!");
