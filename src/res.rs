@@ -8,9 +8,16 @@ r! {
             <color name="inv_slot" val="white"/>
             <color name="inv_slot_select" val="red"/>
             <color name="inv_slot_border" val="black"/>
-        </colors>
-        <shapes>
 
+            <color name="ui_bg" val="#363636AA"/>
+            <color name="ui_highlight" val="#EDD605FF"/>
+        </colors>
+        <dimensions>
+            <dimension name="ui_widget_width" val="6cm"/>
+            <dimension name="ui_widget_height" val="1.5cm"/>
+        </dimensions>
+        <shapes>
+            <shape name="tick" src="shapes/tick.msfx" language="MSFX"/>
         </shapes>
         <textures>
             <texture name="terrain_sand" src="textures/terrain/sand.png"/>
@@ -42,5 +49,8 @@ r! {
         <drawables>
             <drawable name="bg" type="texture" ref="bg"/>
         </drawables>
+        <geometries>
+            <geometry name="tick" type="shape" ref="tick"/>
+        </geometries>
     </resources>
 }

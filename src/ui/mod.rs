@@ -2,22 +2,25 @@ pub mod manager;
 pub mod mainscreen;
 pub mod escape_screen;
 pub mod display;
+pub mod settings;
 
+use std::any::Any;
 use log::error;
 use mvengine::rendering::RenderContext;
 use mvengine::ui::elements::{Element, UiElementCallbacks, UiElementStub};
+use mvengine::ui::page::Page;
 use mvengine::window::Window;
 use mvutils::thread::ThreadSafe;
 use crate::gameloop::GameHandler;
 
 pub struct GameUi {
-    callbacks: Box<dyn GameUiCallbacks>,
+    pub callbacks: Box<dyn GameUiCallbacks>,
     element: ThreadSafe<Element>
 }
 
 impl GameUi {
     pub fn new(callbacks: impl GameUiCallbacks + 'static) -> Option<Self> {
-        let rc = callbacks.element();
+        let rc = callbacks.get_elem();
         let r = rc.get();
         if r.attributes().id.is_none() {
             error!("Cannot create GameUi since the provided ui lacks an id!");
@@ -31,11 +34,7 @@ impl GameUi {
     }
     
     pub fn open(&self, window: &mut Window) {
-        window.ui_mut().add_root(self.element.as_ref().clone());
-    }
-    
-    pub fn close(&self, window: &mut Window) {
-        window.ui_mut().remove_root(self.element.as_ref().clone());
+        window.ui_mut().page_manager_mut().open(self.callbacks.get_name());
     }
     
     pub fn check_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
@@ -43,7 +42,9 @@ impl GameUi {
     }
 }
 
-pub trait GameUiCallbacks: Send + Sync {
-    fn element(&self) -> Element;
+pub trait GameUiCallbacks: Page + Send + Sync {
+    fn get_name(&self) -> &str;
     fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler);
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }

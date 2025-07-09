@@ -15,6 +15,7 @@ mod mods;
 mod rendering;
 mod ui;
 mod uistyles;
+mod gamesettings;
 
 use std::{env, fs};
 use std::fs::{File, OpenOptions};
@@ -46,10 +47,11 @@ fn main() {
     //logpath.push(format!("{}.log", u128::time_millis()));
     //let file = OpenOptions::new().write(true).create(true).truncate(true).open(&logpath).unwrap();
 
-    mvlogger::init(stdout(), LevelFilter::Trace);
+    mvlogger::init(stdout(), LevelFilter::Debug);
     let handler = GameHandler::new();
     let mut info = WindowCreateInfo::default();
     info.vsync = false;
+    info.fps = 60;
     info.title = "FactoryIsland".to_string();
     let window = Window::new(info);
     window.run(handler).expect2("Cannot start window for game!");

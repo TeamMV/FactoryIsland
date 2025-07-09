@@ -33,7 +33,7 @@ float noise( in vec2 p ) {
 }
 
 void main() {
-    vec2 pos = CAM + (FRAME * FACTOR * DIRECTION);
+    vec2 pos = (FRAME * FACTOR * DIRECTION) - CAM;
     vec2 uv = (fUv - pos / RES) * RES / FACTOR;
     float noise = (noise(uv) / 7.0 + noise(uv / 1.5) / 3.0 + noise(uv / 5.0) * 1.2) * EFFECT + (1.0 - EFFECT);
     //float noise = noise((fUv - CAM / RES) * FACTOR) * EFFECT + (1.0 - EFFECT);

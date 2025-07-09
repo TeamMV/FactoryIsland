@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::gameloop::GameHandler;
 use crate::res::R;
 use crate::ui::manager::UI_MAIN_SCREEN;
@@ -14,6 +15,7 @@ use mvengine::ui::elements::UiElementStub;
 use mvengine::ui::styles::{UiStyle, UiValue};
 use mvengine::window::Window;
 use mvengine::{expect_element_by_id, modify_style};
+use mvengine::ui::page::Page;
 use mvengine_proc::resolve_resource;
 use mvengine_proc::{style_expr, ui};
 use mvutils::thread::ThreadSafe;
@@ -58,9 +60,15 @@ impl EscapeScreen {
     }
 }
 
-impl GameUiCallbacks for EscapeScreen {
-    fn element(&self) -> Element {
+impl Page for EscapeScreen {
+    fn get_elem(&self) -> Element {
         self.elem.as_ref().clone()
+    }
+}
+
+impl GameUiCallbacks for EscapeScreen {
+    fn get_name(&self) -> &str {
+        "escape"
     }
 
     fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
@@ -83,5 +91,13 @@ impl GameUiCallbacks for EscapeScreen {
                 }
             }
         }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }

@@ -71,11 +71,11 @@ impl ClientWorld {
                     let pos = Chunk::position_from_index(pos, i);
                     let tile_rect = SimpleRect::new(pos.raw.0 * tile_size, pos.raw.1 * tile_size, tile_size, tile_size);
                     if view_area.intersects(&tile_rect) {
-                        let terrain_height = terrain.id as i32 * 100;
+                        let terrain_height = 1000 - terrain.id as i32 * 100;
                         terrain.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height);
                         if let Some(tile) = &chunk.tiles[i] {
                             let orientation = tile.orientation;
-                            tile.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height + 101);
+                            tile.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height - 101);
                         }
                     }
                 }

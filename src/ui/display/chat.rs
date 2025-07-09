@@ -37,7 +37,7 @@ impl Chat {
         let element = ui! {
             <Ui context={window.ui().context()}>
                 <Div id="chat_container" style="position: absolute; x: 0; y: 0; width: 100%; background.resource: none; border.resource: none; padding: 0.5cm; margin: none; direction: vertical;">
-                    <TextBox id="chat_input" content={chat_state.clone()} style="margin: none; margin.top: 1cm; padding: none; width: 100%; height: 1cm; border.resource: none; background.color: #00000044; text.color: white; text.align_x: start;"/>
+                    <TextBox id="chat_input" content={chat_state.clone()} style="margin: none; padding: none; width: 100%; height: 1cm; border.resource: none; background.color: #00000044; text.color: white; text.align_x: start; text.size: 100%;"/>
                 </Div>
             </Ui>
         };

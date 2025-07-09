@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::gameloop::GameHandler;
 use crate::res::R;
 use crate::ui::GameUiCallbacks;
@@ -22,20 +23,25 @@ use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
 use std::ops::Deref;
+use mvengine::ui::page::Page;
+use crate::ui::manager::UI_SETTINGS_SCREEN;
+use crate::uistyles;
 
 pub struct Mainscreen {
     elem: ThreadSafe<Element>,
     connect_btn: ThreadSafe<Element>,
+    settings_btn: ThreadSafe<Element>,
     server_ip: UiState
 }
 
 impl Mainscreen {
     pub fn new(window: &Window) -> Self {
-        let main_style = style_expr!("position: absolute; width: 100%; height: 100%; child_align_x: middle; child_align_y: middle; background.resource: texture; background.texture: @R.drawable/bg; margin: none; padding: none;");
+        let main_style = uistyles::BG.clone();
 
-        let vert_style = UiStyle::stack_vertical();
+        let mut vert_style = UiStyle::stack_vertical();
+        vert_style.merge_at_set_of(&uistyles::CLEAR);
         
-        let widget_style = style_expr!("width: 5cm; height: 1cm;");
+        let widget_style = uistyles::PRESET.clone();
 
         let mut hover_style = widget_style.clone();
         modify_style!(hover_style.background.color = UiValue::Just(parse_color("#3f48cc").unwrap()));
@@ -45,13 +51,15 @@ impl Mainscreen {
                 <Div id="mainscreen" style={main_style}>
                     <Div style={vert_style}>
                         <TextBox style={widget_style.clone()} id="ip_input" placeholder="SeverIP" content="127.0.0.1:4040"/>
-                        <Button style={widget_style} id="connect">Connect</Button>
+                        <Button style={widget_style.clone()} id="connect">Connect</Button>
+                        <Button style={widget_style.clone()} id="settings">Settings</Button>
                     </Div>
                 </Div>
             </Ui>
         };
 
         let connect_btn = expect_element_by_id!(elem, "connect");
+        let settings_btn = expect_element_by_id!(elem, "settings");
 
         expect_inner_element_by_id_mut!(elem, Button, "connect", btn => {
             //btn.body_mut().set_fade_time(200);
@@ -69,14 +77,21 @@ impl Mainscreen {
         Self {
             elem: ThreadSafe::new(elem),
             connect_btn: ThreadSafe::new(connect_btn),
+            settings_btn: ThreadSafe::new(settings_btn),
             server_ip: content,
         }
     }
 }
 
-impl GameUiCallbacks for Mainscreen {
-    fn element(&self) -> Element {
+impl Page for Mainscreen {
+    fn get_elem(&self) -> Element {
         self.elem.as_ref().clone()
+    }
+}
+
+impl GameUiCallbacks for Mainscreen {
+    fn get_name(&self) -> &str {
+        "mainscreen"
     }
 
     fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
@@ -91,5 +106,20 @@ impl GameUiCallbacks for Mainscreen {
                 }
             }
         }
+        if let Some(event) = &self.settings_btn.as_ref().get().state().events.click_event {
+            if let MouseButton::Left = event.button {
+                if let UiClickAction::Click = event.base.action {
+                    game_handler.ui_manager.goto(UI_SETTINGS_SCREEN, window);
+                }
+            }
+        }
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }

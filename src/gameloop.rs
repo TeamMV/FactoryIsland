@@ -1,35 +1,38 @@
 use crate::camera::Camera;
 use crate::game::Game;
-use api::server::{ClientBoundPacket, ServerBoundPacket};
-use mvengine::net::client::{Client, ClientHandler};
-use mvengine::net::DisconnectReason;
-use mvengine::rendering::camera::OrthographicCamera;
-use mvengine::rendering::control::RenderController;
-use mvengine::rendering::shader::default::DefaultOpenGLShader;
-use mvengine::rendering::OpenGLRenderer;
-use mvengine::window::app::WindowCallbacks;
-use mvengine::window::Window;
-use mvutils::once::CreateOnce;
-use parking_lot::RwLock;
-use std::ops::Deref;
-use std::sync::Arc;
-use std::time::Instant;
-use log::{error, info};
-use mvengine::color::RgbColor;
-use mvengine::input::Input;
-use mvengine::rendering::post::OpenGLPostProcessRenderer;
-use mvengine::ui::rendering::UiRenderer;
-use mvutils::remake::Remake;
-use mvutils::unsafe_utils::Unsafe;
-use api::registry;
-use api::server::packets::common::ClientDataPacket;
-use crate::{debug, input};
 use crate::input::{InputManager, ESCAPE};
 use crate::player::ClientPlayer;
 use crate::rendering::Shaders;
 use crate::res::R;
 use crate::ui::manager;
 use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
+use crate::{debug, gamesettings, input};
+use api::registry;
+use api::server::packets::common::ClientDataPacket;
+use api::server::{ClientBoundPacket, ServerBoundPacket};
+use log::{error, info};
+use mvengine::color::RgbColor;
+use mvengine::input::Input;
+use mvengine::math::vec::Vec2;
+use mvengine::net::client::{Client, ClientHandler};
+use mvengine::net::DisconnectReason;
+use mvengine::rendering::camera::OrthographicCamera;
+use mvengine::rendering::control::RenderController;
+use mvengine::rendering::pipeline::RenderingPipeline;
+use mvengine::rendering::post::OpenGLPostProcessRenderer;
+use mvengine::rendering::shader::default::DefaultOpenGLShader;
+use mvengine::rendering::OpenGLRenderer;
+use mvengine::ui::rendering::UiRenderer;
+use mvengine::window::app::WindowCallbacks;
+use mvengine::window::Window;
+use mvutils::once::CreateOnce;
+use mvutils::remake::Remake;
+use mvutils::unsafe_utils::Unsafe;
+use parking_lot::RwLock;
+use std::ops::Deref;
+use std::sync::Arc;
+use std::time::Instant;
+use mvengine::ui::geometry::shape::shapes;
 
 pub type FactoryIslandClient = Client<ClientBoundPacket, ServerBoundPacket>;
 
@@ -37,38 +40,27 @@ pub struct GameHandler {
     pub this: CreateOnce<Arc<RwLock<Self>>>,
     pub client: Option<FactoryIslandClient>,
 
-    pub renderer: CreateOnce<OpenGLRenderer>,
-    pub shader: CreateOnce<DefaultOpenGLShader>,
-    pub controller: CreateOnce<RenderController>,
-    pub mv_camera: OrthographicCamera,
-    pub post_renderer: CreateOnce<OpenGLPostProcessRenderer>,
-
-    pub shaders: CreateOnce<Shaders>,
+    pub world_pipeline: CreateOnce<RenderingPipeline<OpenGLRenderer>>,
+    pub player_pipeline: CreateOnce<RenderingPipeline<OpenGLRenderer>>,
+    pub ui_pipeline: CreateOnce<RenderingPipeline<OpenGLRenderer>>,
 
     pub game: Game,
 
     pub ui_manager: CreateOnce<GameUiManager>,
-    pub draw_ctx: CreateOnce<UiRenderer>,
 
     pub cloud_frame: f32
 }
 
 impl GameHandler {
     pub fn new() -> Arc<RwLock<Self>> {
-        let cam = OrthographicCamera::new(1, 1); //not have divide by 0
-
         let this = Self {
             this: CreateOnce::new(),
             client: None,
-            renderer: CreateOnce::new(),
-            shader: CreateOnce::new(),
-            controller: CreateOnce::new(),
-            mv_camera: cam,
-            post_renderer: CreateOnce::new(),
-            shaders: CreateOnce::new(),
+            world_pipeline: CreateOnce::new(),
+            player_pipeline: CreateOnce::new(),
+            ui_pipeline: CreateOnce::new(),
             game: Game::new(),
             ui_manager: CreateOnce::new(),
-            draw_ctx: CreateOnce::new(),
             cloud_frame: 0.0,
         };
 
@@ -90,26 +82,24 @@ impl WindowCallbacks for GameHandler {
 
             self.game.create_ui(window);
             self.game.load_client_res();
-
-            OpenGLRenderer::prepare(window);
-            let renderer = OpenGLRenderer::initialize(window);
-            self.renderer.create(|| renderer);
-
-            let mut shader = DefaultOpenGLShader::new();
-            shader.make().unwrap();
-            shader.bind().unwrap();
-            self.shader.create(|| shader);
-
-            let controller = RenderController::new(self.shader.get_program_id());
-            self.controller.create(|| controller);
-
-            let post_renderer = OpenGLPostProcessRenderer::new(window.info().width as i32, window.info().height as i32);
-            self.post_renderer.create(|| post_renderer);
             
             let shaders = Shaders::new();
-            self.shaders.create(|| shaders);
 
-            self.mv_camera.update_projection(window.info().width, window.info().height);
+
+            //Unwrap here cuz what are ya gonna do without rendering
+            let mut world_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
+            world_pipeline.create_post(window);
+            let [ssao, clouds] = [shaders.ssao, shaders.clouds];
+            world_pipeline.add_post_step(ssao);
+            world_pipeline.add_post_step(clouds);
+
+            self.world_pipeline.create(|| world_pipeline);
+
+            let mut player_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
+            self.player_pipeline.create(|| player_pipeline);
+
+            let mut ui_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
+            self.ui_pipeline.create(|| ui_pipeline);
 
             self.game.resize(window.info().width, window.info().height);
 
@@ -119,8 +109,7 @@ impl WindowCallbacks for GameHandler {
             manager.goto(manager::UI_MAIN_SCREEN, window);
             self.ui_manager.create(|| manager);
             
-            let renderer = UiRenderer::new(window);
-            self.draw_ctx.create(|| renderer);
+            gamesettings::load_settings(&self.game, &mut self.ui_manager);
         }
     }
 
@@ -138,35 +127,44 @@ impl WindowCallbacks for GameHandler {
 
         self.game.on_frame(window, &self.client);
 
-        OpenGLRenderer::enable_depth_test();
         OpenGLRenderer::clear();
-        self.shader.use_program();
-        self.game.draw_world(&mut *self.controller);
-        let target = self.controller.draw_to_target(window, &self.mv_camera, &mut *self.renderer, &mut self.shader);
-        self.post_renderer.set_target(target);
-        self.shaders.ssao.use_program();
-        self.post_renderer.run_shader(&mut self.shaders.ssao);
-        self.shaders.clouds.use_program();
-        self.shaders.clouds.uniform_2fv("CAM", &self.mv_camera.position);
-        self.shaders.clouds.uniform_1f("FRAME", self.cloud_frame);
-        self.post_renderer.run_shader(&mut self.shaders.clouds);
-        self.post_renderer.draw_to_screen();
+        self.world_pipeline.begin_frame();
 
-        self.game.draw_players(&mut *self.controller);
-        self.shader.use_program();
-        self.controller.draw(window, &self.mv_camera, &mut *self.renderer, &mut self.shader);
+        self.game.draw_world(&mut *self.world_pipeline);
 
-        let unsafe_self = unsafe { Unsafe::cast_mut_static(self) };
+        OpenGLRenderer::enable_depth_buffer();
+        //draw raw world
+        self.world_pipeline.advance(window, |_| {});
+        //draw ssao
+        self.world_pipeline.advance(window, |_| {});
+        let cam_pos = Vec2::from_i32s(self.game.player.camera.pos);
+        //draw clouds
+        self.world_pipeline.advance(window, |s| {
+            s.uniform_1f("FRAME", self.cloud_frame);
+            s.uniform_2fv("CAM", &cam_pos);
+        });
+
+        self.world_pipeline.next_pipeline(&mut *self.player_pipeline);
+
+        self.game.draw_players(&mut *self.player_pipeline);
+        self.player_pipeline.advance(window, |_| {});
+
+        let unsafe_self = unsafe { Unsafe::cast_lifetime_mut(self) };
         self.ui_manager.check_events(window, unsafe_self);
 
+        self.player_pipeline.next_pipeline(&mut *self.ui_pipeline);
+
         let a = window.area();
-        window.ui_mut().draw(&mut self.draw_ctx, &a);
-        self.draw_ctx.draw(window);
+        window.ui_mut().draw(&mut *self.ui_pipeline, &a);
+        OpenGLRenderer::enable_depth_test();
+        OpenGLRenderer::enable_depth_buffer();
+        self.ui_pipeline.advance(window, |_| {});
 
         self.cloud_frame += 0.003;
     }
 
     fn post_draw(&mut self, window: &mut Window, delta_t: f64) {
+        //println!("FPS: {}, delta: {}", window.fps(), delta_t);
         mvengine::debug::print_summary(1000);
     }
 
@@ -175,14 +173,14 @@ impl WindowCallbacks for GameHandler {
             client.disconnect(DisconnectReason::Disconnected);
         }
         InputManager::close(&self.game, &mut window.input);
+        gamesettings::save_settings(&self.game, &self.ui_manager);
     }
 
     fn resize(&mut self, window: &mut Window, width: u32, height: u32) {
-        self.mv_camera.update_projection(window.info().width, window.info().height);
+        self.world_pipeline.resize(window);
+        self.player_pipeline.resize(window);
+        self.ui_pipeline.resize(window);
         self.game.resize(width, height);
-        *self.renderer = unsafe { OpenGLRenderer::initialize(window) };
-        self.draw_ctx.resize(window);
-        window.ui_mut().compute_styles(&mut *self.draw_ctx);
     }
 }
 
@@ -200,11 +198,11 @@ impl ClientHandler<ClientBoundPacket> for GameHandler {
     fn on_packet(&mut self, packet: ClientBoundPacket) {
         match packet {
             ClientBoundPacket::TileSet(packet) => {
-                let unsafe_game = unsafe { Unsafe::cast_static(&self.game) };
+                let unsafe_game = unsafe { Unsafe::cast_lifetime(&self.game) };
                 self.game.world.sync(packet, unsafe_game);
             }
             ClientBoundPacket::ChunkData(packet) => {
-                let unsafe_game = unsafe { Unsafe::cast_static(&self.game) };
+                let unsafe_game = unsafe { Unsafe::cast_lifetime(&self.game) };
                 self.game.world.sync_chunk(packet, unsafe_game);
             }
             ClientBoundPacket::PlayerMove(packet) => {

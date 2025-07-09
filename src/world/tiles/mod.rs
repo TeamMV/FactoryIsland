@@ -39,32 +39,32 @@ pub trait TileDraw {
         controller.push_quad(Quad {
             points: [
                 InputVertex {
-                    transform: Transform::new().translate_self(x1, y1),
-                    pos: (0.0, 0.0, y as f32),
+                    transform: Transform::new(),
+                    pos: (x1, y1, y as f32),
                     color: tint.as_vec4(),
                     uv: uv[0],
                     texture: tex.id,
                     has_texture: 1.0,
                 },
                 InputVertex {
-                    transform: Transform::new().translate_self(x1, y2),
-                    pos: (0.0, 0.0, y as f32),
+                    transform: Transform::new(),
+                    pos: (x1, y2, y as f32),
                     color: tint.as_vec4(),
                     uv: uv[1],
                     texture: tex.id,
                     has_texture: 1.0,
                 },
                 InputVertex {
-                    transform: Transform::new().translate_self(x2, y2),
-                    pos: (0.0, 0.0, y as f32),
+                    transform: Transform::new(),
+                    pos: (x2, y2, y as f32),
                     color: tint.as_vec4(),
                     uv: uv[2],
                     texture: tex.id,
                     has_texture: 1.0,
                 },
                 InputVertex {
-                    transform: Transform::new().translate_self(x2, y1),
-                    pos: (0.0, 0.0, y as f32),
+                    transform: Transform::new(),
+                    pos: (x2, y1, y as f32),
                     color: tint.as_vec4(),
                     uv: uv[3],
                     texture: tex.id,
@@ -111,7 +111,7 @@ impl ClientTile {
             ObjectSource::Mod(modid, mapper) => {
                 let tex = if let Some(res) = game.client_resources.get(modid) {
                     //this is fine cuz u cannot unload mods at runtime
-                    let res = unsafe { Unsafe::cast_static(res) };
+                    let res = unsafe { Unsafe::cast_lifetime(res) };
                     ClientDrawable::from_drawable(mapper.map(state), res)
                 } else {
                     ClientDrawable::Texture(R.resolve_texture(R.mv.texture.missing).unwrap())

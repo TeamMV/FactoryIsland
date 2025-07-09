@@ -26,7 +26,7 @@ void main() {
     }
     
     offDepths /= float(sampleCount);
-    float occlusion = 1.0 - abs(clamp(offDepths - depth, 0.0, 1.0)) * FACTOR;
+    float occlusion = 1.0 - clamp((depth - offDepths), 0.0, 1.0) * FACTOR;
 
     vec4 color = texture(COLOR, fUv);
     outColor = vec4(color.rgb * occlusion, 1.0);
