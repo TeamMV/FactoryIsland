@@ -140,9 +140,9 @@ impl Game {
         self.player.draw(ctx, self.tile_size);
     }
 
-    pub fn check_inputs(&mut self, window: &mut Window, client: &mut FactoryIslandClient) {
+    pub fn check_inputs(&mut self, window: &mut Window, client: &mut FactoryIslandClient, delta_t: f64) {
         let mut has_moved = false;
-        let speed = 0.4;
+        let speed = 12.0 * delta_t;
         if !self.chat.open {
             if window.input.is_action(input::MOVE_FORWARD) {
                 self.player.move_by((0.0, speed), self.tile_size);

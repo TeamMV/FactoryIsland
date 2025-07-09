@@ -51,7 +51,7 @@ fn main() {
     let handler = GameHandler::new();
     let mut info = WindowCreateInfo::default();
     info.vsync = false;
-    info.fps = 60;
+    info.fps = 240;
     info.title = "FactoryIsland".to_string();
     let window = Window::new(info);
     window.run(handler).expect2("Cannot start window for game!");

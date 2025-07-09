@@ -119,7 +119,7 @@ impl WindowCallbacks for GameHandler {
 
     fn draw(&mut self, window: &mut Window, delta_t: f64) {
         if let Some(client) = &mut self.client {
-            self.game.check_inputs(window, client);
+            self.game.check_inputs(window, client, delta_t);
         }
         if window.input.was_action(ESCAPE) {
             self.ui_manager.goto(UI_ESCAPE_SCREEN, window);
