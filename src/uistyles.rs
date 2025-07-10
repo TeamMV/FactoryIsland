@@ -54,6 +54,15 @@ lazy! {
         padding: none;
     });
 
+    pub static EDIT_PRESET: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            padding: 0.2cm;
+        });
+        let mut base = PRESET.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
     pub static CLEAR_PRESET: UiStyle = {
         let mut base = PRESET.clone();
         base.merge_at_set_of(&CLEAR);

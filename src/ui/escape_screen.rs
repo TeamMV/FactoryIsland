@@ -40,7 +40,7 @@ impl EscapeScreen {
 
         let elem = ui! {
             <Ui context={window.ui().context()}>
-                <Div id="escape_screen" style={main_style}>
+                <Div id="escape" style={main_style}>
                     <Div style={vert_style}>
                         <Button style={widget_style.clone()} id="quit">Quit</Button>
                         <Button style={widget_style} id="back">Back</Button>

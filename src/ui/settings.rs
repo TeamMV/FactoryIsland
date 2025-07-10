@@ -11,14 +11,8 @@ use mvengine::window::Window;
 use mvengine_proc::ui;
 use mvutils::thread::ThreadSafe;
 use mvengine::ui::elements::prelude::*;
-use mvutils::Savable;
 use mvutils::state::State;
-
-#[derive(Savable)]
-pub struct GameSettingsFile {
-    clouds: bool,
-    ssao: bool,
-}
+use crate::game::Game;
 
 pub struct SettingsScreen {
     elem: ThreadSafe<Element>,
@@ -26,16 +20,15 @@ pub struct SettingsScreen {
 
     pub enable_clouds: State<bool>,
     pub enable_ssao: State<bool>,
-    //TODO: make these settings available on Game
 }
 
 impl SettingsScreen {
-    pub fn new(window: &Window) -> Self {
+    pub fn new(window: &Window, game: &Game) -> Self {
         let main_style = uistyles::BG.clone();
         let widget = uistyles::PRESET.clone();
 
-        let enable_clouds = State::new(true);
-        let enable_ssao = State::new(true);
+        let enable_clouds = game.settings.cloud_shader.clone();
+        let enable_ssao = game.settings.ssao_shader.clone();
 
         let elem = ui! {
             <Ui context={window.ui().context()}>
@@ -57,18 +50,6 @@ impl SettingsScreen {
             back_btn: ThreadSafe::new(back_btn),
             enable_clouds,
             enable_ssao,
-        }
-    }
-
-    pub fn load_save(&mut self, file: GameSettingsFile) {
-        *self.enable_clouds.write() = file.clouds;
-        *self.enable_ssao.write() = file.ssao;
-    }
-
-    pub fn create_save(&self) -> GameSettingsFile {
-        GameSettingsFile {
-            clouds: *self.enable_clouds.read(),
-            ssao: *self.enable_ssao.read(),
         }
     }
 }

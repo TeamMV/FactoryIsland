@@ -13,6 +13,7 @@ pub const MOVE_LEFT: &str = "move_left";
 pub const MOVE_RIGHT: &str = "move_right";
 pub const ESCAPE: &str = "escape";
 pub const CHAT: &str = "chat";
+pub const RELOAD_CHUNKS: &str = "reload_chunks";
 
 pub const PATH: &str = ".factoryisland/";
 
@@ -27,6 +28,7 @@ impl InputManager {
         actions.create_action(MOVE_RIGHT);
         actions.create_action(ESCAPE);
         actions.create_action(CHAT);
+        actions.create_action(RELOAD_CHUNKS);
 
         //defaults, get overridden by file
         actions.bind_action(MOVE_FORWARD, vec![RawInput::KeyPress(Key::W)]);
@@ -35,6 +37,7 @@ impl InputManager {
         actions.bind_action(MOVE_RIGHT, vec![RawInput::KeyPress(Key::D)]);
         actions.bind_action(ESCAPE, vec![RawInput::KeyPress(Key::Escape)]);
         actions.bind_action(CHAT, vec![RawInput::KeyPress(Key::Return)]);
+        actions.bind_action(RELOAD_CHUNKS, vec![RawInput::KeyPress(Key::F3), RawInput::KeyPress(Key::R)]);
 
         let dir = game.configuration_directory();
         if let Ok(_) = input.load_actions(dir) {

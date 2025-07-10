@@ -14,7 +14,7 @@ debug = false
 api = { path = "Api", package = "Api" }
 
 mvlogger = "0.4.0"
-mvutils = { version = "1.5.1", features = ["save_str"] }
+mvutils = { version = "1.5.2", features = ["save_str"] }
 mvengine = { path = "../MVEngine", features = ["timed"] }
 mvengine_proc = { path = "../MVEngine/Proc", package = "mvengine-proc-macro" }
 
@@ -23,3 +23,4 @@ parking_lot = "0.12.3"
 libloading = "0.8.6"
 bytebuffer = "2.3.0"
 hashbrown = "0.15.4"
+ropey = "1.6.1"

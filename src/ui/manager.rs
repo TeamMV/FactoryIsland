@@ -1,9 +1,11 @@
+use log::warn;
 use crate::gameloop::GameHandler;
 use crate::ui::escape_screen::EscapeScreen;
 use crate::ui::mainscreen::Mainscreen;
 use crate::ui::GameUi;
 use mvengine::ui::elements::UiElementStub;
 use mvengine::window::Window;
+use crate::game::Game;
 use crate::ui::settings::SettingsScreen;
 
 pub const AMT_UIS: usize = 3;
@@ -18,13 +20,13 @@ pub struct GameUiManager {
 }
 
 impl GameUiManager {
-    pub fn create_all(window: &mut Window) -> Self {
+    pub fn create_all(window: &mut Window, game: &Game) -> Self {
         let this = Self {
             current: None,
             uis: [
                 GameUi::new(Mainscreen::new(window)).expect("vanilla stuff that cannot break"),
                 GameUi::new(EscapeScreen::new(window)).expect("vanilla stuff that cannot break"),
-                GameUi::new(SettingsScreen::new(window)).expect("vanilla stuff that cannot break"),
+                GameUi::new(SettingsScreen::new(window, game)).expect("vanilla stuff that cannot break"),
             ]
         };
 
@@ -40,6 +42,8 @@ impl GameUiManager {
         if let Some(elem) = self.uis.get_mut(ui) {
             elem.open(window);
             self.current = Some(ui);
+        } else {
+            warn!("Invalid screen index!");
         }
     }
     

@@ -11,6 +11,7 @@ uniform vec2 DIRECTION = vec2(1.0, 0.0);
 uniform float FRAME;
 
 const float FACTOR = 150;
+const float SPEED = 1;
 const float EFFECT = 0.15;
 
 vec2 hash( vec2 p ) {
@@ -33,7 +34,7 @@ float noise( in vec2 p ) {
 }
 
 void main() {
-    vec2 pos = (FRAME * FACTOR * DIRECTION) - CAM;
+    vec2 pos = (FRAME * SPEED * DIRECTION) - CAM;
     vec2 uv = (fUv - pos / RES) * RES / FACTOR;
     float noise = (noise(uv) / 7.0 + noise(uv / 1.5) / 3.0 + noise(uv / 5.0) * 1.2) * EFFECT + (1.0 - EFFECT);
     //float noise = noise((fUv - CAM / RES) * FACTOR) * EFFECT + (1.0 - EFFECT);

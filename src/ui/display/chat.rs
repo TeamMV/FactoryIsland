@@ -13,11 +13,13 @@ use mvengine::window::Window;
 use mvengine::{expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
 use mvengine::net::server::ClientEndpoint;
 use mvengine::ui::context::UiContext;
+use mvengine::utils::RopeFns;
 use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
+use ropey::Rope;
 use api::server::packets::player::{OtherPlayerChatPacket, PlayerChatPacket};
 use api::server::ServerBoundPacket;
 use crate::gameloop::FactoryIslandClient;
@@ -26,13 +28,13 @@ pub struct Chat {
     pub open: bool,
     element: ThreadSafe<Element>,
     scroll_div: ThreadSafe<Element>,
-    chat_state: State<String>,
+    chat_state: State<Rope>,
     context: ThreadSafe<UiContext>,
 }
 
 impl Chat {
     pub fn new(window: &mut Window) -> Self {
-        let chat_state = State::new(String::new());
+        let chat_state = State::new(Rope::new());
 
         let element = ui! {
             <Ui context={window.ui().context()}>
@@ -83,7 +85,7 @@ impl Chat {
             self.close(window);
 
             let message = self.chat_state.read();
-            let message = message.clone();
+            let message = message.to_string();
             
             client.send(ServerBoundPacket::PlayerChat(PlayerChatPacket {
                 message,

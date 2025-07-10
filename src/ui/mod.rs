@@ -5,7 +5,7 @@ pub mod display;
 pub mod settings;
 
 use std::any::Any;
-use log::error;
+use log::{debug, error};
 use mvengine::rendering::RenderContext;
 use mvengine::ui::elements::{Element, UiElementCallbacks, UiElementStub};
 use mvengine::ui::page::Page;
@@ -34,7 +34,9 @@ impl GameUi {
     }
     
     pub fn open(&self, window: &mut Window) {
-        window.ui_mut().page_manager_mut().open(self.callbacks.get_name());
+        let name = self.callbacks.get_name();
+        debug!("Opened screen: {name}");
+        window.ui_mut().page_manager_mut().open(name);
     }
     
     pub fn check_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {

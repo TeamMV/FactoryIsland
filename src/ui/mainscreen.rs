@@ -24,6 +24,7 @@ use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
 use std::ops::Deref;
 use mvengine::ui::page::Page;
+use ropey::Rope;
 use crate::ui::manager::UI_SETTINGS_SCREEN;
 use crate::uistyles;
 
@@ -50,7 +51,7 @@ impl Mainscreen {
             <Ui context={window.ui().context()}>
                 <Div id="mainscreen" style={main_style}>
                     <Div style={vert_style}>
-                        <TextBox style={widget_style.clone()} id="ip_input" placeholder="SeverIP" content="127.0.0.1:4040"/>
+                        <TextBox style={uistyles::EDIT_PRESET.clone()} id="ip_input" placeholder="SeverIP" content="127.0.0.1:4040"/>
                         <Button style={widget_style.clone()} id="connect">Connect</Button>
                         <Button style={widget_style.clone()} id="settings">Settings</Button>
                     </Div>
@@ -66,7 +67,7 @@ impl Mainscreen {
             //btn.body_mut().set_hover_style(Some(hover_style.clone()));
         });
         
-        let mut content = State::new(String::new()).map_identity();
+        let mut content = State::new(Rope::new()).map_identity();
         
         expect_inner_element_by_id_mut!(elem, TextBox, "ip_input", textbox => {
             //textbox.body_mut().set_fade_time(200);

@@ -1,11 +1,11 @@
 use mvengine::rendering::post::OpenGLPostProcessShader;
 
-pub struct Shaders {
+pub struct WorldShaders {
     pub ssao: OpenGLPostProcessShader,
     pub clouds: OpenGLPostProcessShader
 }
 
-impl Shaders {
+impl WorldShaders {
     pub fn new() -> Self {
         let mut this = Self {
             ssao: OpenGLPostProcessShader::new(include_str!("../res/shaders/ssao.frag")),

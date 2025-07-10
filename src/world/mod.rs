@@ -61,6 +61,10 @@ impl ClientWorld {
         self.loaded.remove(&pos);
     }
 
+    pub fn drop_all(&mut self) {
+        self.loaded.clear();
+    }
+
     pub fn draw(&self, renderer: &mut impl RenderContext, view_area: &SimpleRect, tile_size: i32) {
         for (pos, chunk) in self.loaded.iter() {
             let chunk_area = SimpleRect::new(pos.0 * CHUNK_SIZE * tile_size, pos.1 * CHUNK_SIZE * tile_size, CHUNK_SIZE * tile_size, CHUNK_SIZE * tile_size);
