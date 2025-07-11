@@ -35,7 +35,6 @@ impl GameUi {
     
     pub fn open(&self, window: &mut Window) {
         let name = self.callbacks.get_name();
-        debug!("Opened screen: {name}");
         window.ui_mut().page_manager_mut().open(name);
     }
     

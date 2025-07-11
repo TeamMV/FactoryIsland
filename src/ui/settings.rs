@@ -1,18 +1,18 @@
-use std::any::Any;
-use mvengine::expect_element_by_id;
-use mvengine::input::consts::MouseButton;
+use crate::game::Game;
 use crate::gameloop::GameHandler;
 use crate::ui::GameUiCallbacks;
 use crate::uistyles;
-use mvengine::ui::elements::Element;
+use mvengine::expect_element_by_id;
+use mvengine::input::consts::MouseButton;
 use mvengine::ui::elements::events::UiClickAction;
+use mvengine::ui::elements::prelude::*;
+use mvengine::ui::elements::Element;
 use mvengine::ui::page::Page;
 use mvengine::window::Window;
 use mvengine_proc::ui;
-use mvutils::thread::ThreadSafe;
-use mvengine::ui::elements::prelude::*;
 use mvutils::state::State;
-use crate::game::Game;
+use mvutils::thread::ThreadSafe;
+use std::any::Any;
 
 pub struct SettingsScreen {
     elem: ThreadSafe<Element>,
@@ -26,6 +26,7 @@ impl SettingsScreen {
     pub fn new(window: &Window, game: &Game) -> Self {
         let main_style = uistyles::BG.clone();
         let widget = uistyles::PRESET.clone();
+        let checkbox_style = uistyles::CHECKBOX_PRESET.clone();
 
         let enable_clouds = game.settings.cloud_shader.clone();
         let enable_ssao = game.settings.ssao_shader.clone();
@@ -35,8 +36,8 @@ impl SettingsScreen {
                 <Div style={main_style} id="settings">
                     <Div style={uistyles::FRAME.clone()}>
                         <Button style={uistyles::CLEAR_PRESET.clone()}>- Settings -</Button>
-                        <CheckBox selected={enable_clouds.clone()} style={widget.clone()}>Cloud Shader</CheckBox>
-                        <CheckBox selected={enable_ssao.clone()} style={widget.clone()}>SSAO Shader</CheckBox>
+                        <CheckBox selected={enable_clouds.clone()} style={checkbox_style.clone()}>Cloud Shader</CheckBox>
+                        <CheckBox selected={enable_ssao.clone()} style={checkbox_style.clone()}>SSAO Shader</CheckBox>
                         <Button style={widget.clone()} id="back_btn">Back</Button>
                     </Div>
                 </Div>

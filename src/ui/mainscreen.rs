@@ -100,7 +100,7 @@ impl GameUiCallbacks for Mainscreen {
             if let MouseButton::Left = event.button {
                 if let UiClickAction::Click = event.base.action {
                     let ip = self.server_ip.read().to_string();
-                    let client = Client::connect(ip, game_handler.this.deref().clone()).expect("Cannot connect to local server");
+                    let client = Client::connect(ip, game_handler.this.deref().upgrade().expect("This can never be invalid!")).expect("Cannot connect to local server");
                     game_handler.client = Some(client);
 
                     game_handler.ui_manager.close_all(window);

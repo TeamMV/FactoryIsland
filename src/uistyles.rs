@@ -52,11 +52,22 @@ lazy! {
         text.align_x: middle;
         text.align_y: middle;
         padding: none;
+        overflow_y: never;
+        overflow_x: never;
     });
 
     pub static EDIT_PRESET: UiStyle = {
         let m = multiline_str_into!(style_expr_empty, {
             padding: 0.2cm;
+        });
+        let mut base = PRESET.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
+    pub static CHECKBOX_PRESET: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            text.align_x: start;
         });
         let mut base = PRESET.clone();
         base.merge_at_set_of(&m);

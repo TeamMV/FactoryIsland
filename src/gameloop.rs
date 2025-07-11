@@ -30,14 +30,14 @@ use mvutils::remake::Remake;
 use mvutils::unsafe_utils::Unsafe;
 use parking_lot::RwLock;
 use std::ops::Deref;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use std::time::Instant;
 use mvengine::ui::geometry::shape::shapes;
 
 pub type FactoryIslandClient = Client<ClientBoundPacket, ServerBoundPacket>;
 
 pub struct GameHandler {
-    pub this: CreateOnce<Arc<RwLock<Self>>>,
+    pub this: CreateOnce<Weak<RwLock<Self>>>,
     pub client: Option<FactoryIslandClient>,
 
     pub ui_pipeline: CreateOnce<RenderingPipeline<OpenGLRenderer>>,
@@ -64,7 +64,7 @@ impl GameHandler {
         };
 
         let arc = Arc::new(RwLock::new(this));
-        let cloned = arc.clone();
+        let cloned = Arc::downgrade(&arc);
         let mut lock = arc.write();
         lock.this.create(|| cloned);
         drop(lock);
@@ -102,11 +102,7 @@ impl WindowCallbacks for GameHandler {
     }
 
     fn draw(&mut self, window: &mut Window, delta_t: f64) {
-        if window.input.was_action(ESCAPE) {
-            self.ui_manager.goto(UI_ESCAPE_SCREEN, window);
-        }
-
-        self.game.on_frame(window, &mut self.client);
+        self.game.on_frame(window, &mut self.client, &mut self.ui_manager);
 
         OpenGLRenderer::clear();
         if let Some(view) = &mut self.game.world_view {

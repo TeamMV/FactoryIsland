@@ -75,10 +75,10 @@ impl Game {
         };
     }
     
-    pub fn on_frame(&mut self, window: &mut Window, client: &mut Option<FactoryIslandClient>) {
+    pub fn on_frame(&mut self, window: &mut Window, client: &mut Option<FactoryIslandClient>, ui_manager: &mut GameUiManager) {
         if let Some(view) = &mut self.world_view {
             if let Some(client) = client {
-                view.on_frame(window, client);
+                view.on_frame(window, client, ui_manager);
             }
         }
     }

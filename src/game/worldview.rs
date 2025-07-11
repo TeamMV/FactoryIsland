@@ -28,6 +28,8 @@ use mvengine_proc::ui;
 use mvutils::hashers::U64IdentityHasher;
 use mvutils::thread::ThreadSafe;
 use std::collections::HashMap;
+use crate::input::ESCAPE;
+use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
 
 type RP = RenderingPipeline<OpenGLRenderer>;
 
@@ -174,11 +176,14 @@ impl WorldView {
         self.player.draw(&mut self.player_pipeline, self.tile_size);
     }
 
-    pub fn on_frame(&mut self, window: &mut Window, client: &mut FactoryIslandClient) {
+    pub fn on_frame(&mut self, window: &mut Window, client: &mut FactoryIslandClient, ui_manager: &mut GameUiManager) {
         if !self.initialized {
             self.initialized = true;
 
             client.send(ServerBoundPacket::ClientData(self.player.data.clone()));
+        }
+        if window.input.was_action(ESCAPE) {
+            ui_manager.goto(UI_ESCAPE_SCREEN, window);
         }
         let mut has_moved = false;
         let speed = 12.0 * window.get_delta_t();

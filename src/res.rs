@@ -13,7 +13,7 @@ r! {
             <color name="ui_highlight" val="#EDD605FF"/>
         </colors>
         <dimensions>
-            <dimension name="ui_widget_width" val="6cm"/>
+            <dimension name="ui_widget_width" val="10cm"/>
             <dimension name="ui_widget_height" val="1.5cm"/>
         </dimensions>
         <shapes>
