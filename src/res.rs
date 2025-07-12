@@ -14,7 +14,7 @@ r! {
         </colors>
         <dimensions>
             <dimension name="ui_widget_width" val="10cm"/>
-            <dimension name="ui_widget_height" val="1.5cm"/>
+            <dimension name="ui_widget_height" val="10.5cm"/>
         </dimensions>
         <shapes>
             <shape name="tick" src="shapes/tick.msfx" language="MSFX"/>
