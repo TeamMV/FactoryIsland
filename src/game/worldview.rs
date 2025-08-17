@@ -40,7 +40,7 @@ pub struct WorldView {
     pub tile_selection: TileSelection,
     pub chat: Chat,
 
-    //game
+    //gamehi
     pub world: ClientWorld,
     pub tile_size: i32,
     pub player: ClientPlayer,
@@ -87,6 +87,7 @@ impl WorldView {
             player: ClientPlayer::new(1, 1, ClientDataPacket {
                 name: "v22".to_string(),
                 render_distance: 1,
+                client_id: server_state_packet.client_id,
             }),
             other_players: map,
             world_pipeline,
@@ -101,6 +102,7 @@ impl WorldView {
     }
 
     pub fn open(&mut self, window: &mut Window) {
+        self.tile_selection.open(window, self.click_area.as_ref().clone());
         window.ui_mut().add_root(self.click_area.as_ref().clone());
     }
 
@@ -186,7 +188,7 @@ impl WorldView {
             ui_manager.goto(UI_ESCAPE_SCREEN, window);
         }
         let mut has_moved = false;
-        let speed = 12.0 * window.get_delta_t();
+        let speed = self.player.speed * window.get_delta_t();
         if !self.chat.open {
             if window.input.is_action(input::MOVE_FORWARD) {
                 self.player.move_by((0.0, speed), self.tile_size);

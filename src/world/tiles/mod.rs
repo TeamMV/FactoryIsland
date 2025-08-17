@@ -6,7 +6,6 @@ use crate::world::terrain_tex_mapper::get_terrain_drawable;
 use crate::world::tile_tex_mapper::get_tile_drawable;
 use api::world::chunk::ToClientObject;
 use api::world::tiles::pos::TilePos;
-use api::world::tiles::terrain::ObjectSource;
 use api::world::tiles::Orientation;
 use mvengine::color::RgbColor;
 use mvengine::graphics::animation::GlobalAnimation;
@@ -21,6 +20,7 @@ use mvutils::unsafe_utils::Unsafe;
 use mvutils::utils::TetrahedronOp;
 use std::ops::Deref;
 use mvengine::graphics::Drawable;
+use api::registry::ObjectSource;
 
 pub trait TileDraw {
     fn draw(&self, ctx: &mut impl RenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32);
@@ -108,11 +108,12 @@ impl ClientTile {
                     orientation,
                 }
             }
-            ObjectSource::Mod(modid, mapper) => {
+            ObjectSource::Mod(modid) => {
                 let tex = if let Some(res) = game.client_resources.get(modid) {
                     //this is fine cuz u cannot unload mods at runtime
                     let res = unsafe { Unsafe::cast_lifetime(res) };
-                    ClientDrawable::from_drawable(mapper.map(state), res)
+                    //again here //TODO
+                    ClientDrawable::from_drawable(Drawable::missing(), res)
                 } else {
                     ClientDrawable::Texture(R.resolve_texture(R.mv.texture.missing).unwrap())
                 };

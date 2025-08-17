@@ -17,7 +17,8 @@ pub const PADDING_FACTOR: i32 = 4;
 pub struct ClientPlayer {
     pos: TileUnit,
     pub(crate) camera: Camera,
-    pub data: ClientDataPacket
+    pub data: ClientDataPacket,
+    pub speed: f64
 }
 
 impl ClientPlayer {
@@ -26,6 +27,7 @@ impl ClientPlayer {
             pos: (0.0, 0.0),
             camera: Camera::new(view_width, view_height),
             data,
+            speed: 20.0,
         }
     }
 

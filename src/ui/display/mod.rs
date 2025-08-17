@@ -8,7 +8,6 @@ use mvengine::{expect_element_by_id, modify_style};
 use mvengine_proc::style_expr;
 use crate::world::tile_tex_mapper::get_tile_drawable;
 use api::server::packets::common::TileKind;
-use api::world::tiles::ObjectSource;
 use mvengine::graphics::Drawable;
 use mvengine::input::consts::MouseButton;
 use mvengine::ui::elements::child::ToChild;
@@ -21,6 +20,7 @@ use mvengine::window::Window;
 use mvengine_proc::ui;
 use mvutils::lazy;
 use mvutils::thread::ThreadSafe;
+use api::registry::ObjectSource;
 
 lazy! {
     static SELECT_STYLE: UiStyle = {
@@ -152,8 +152,8 @@ impl TileSelection {
 }
 
 fn get_drawable(kind: &TileKind) -> Drawable {
-    if let ObjectSource::Mod(m, mapper) = &kind.source {
-        mapper.map(0)
+    if let ObjectSource::Mod(m) = &kind.source {
+        Drawable::missing() //first get the rest to compile again
     } else {
         get_tile_drawable(kind.id, 0)
     }

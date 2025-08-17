@@ -21,8 +21,6 @@ lazy! {
         padding: none;
     });
 
-    //TODO: fix vertical alignment issue in mvengine where middle doesnt work when the child is height: %
-
     pub static FRAME: UiStyle = {
         let mut base = BG.clone();
         let s = multiline_str_into!(style_expr_empty,{

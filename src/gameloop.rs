@@ -32,6 +32,7 @@ use parking_lot::RwLock;
 use std::ops::Deref;
 use std::sync::{Arc, Weak};
 use std::time::Instant;
+use mvengine::ui::context::UiResources;
 use mvengine::ui::geometry::shape::shapes;
 
 pub type FactoryIslandClient = Client<ClientBoundPacket, ServerBoundPacket>;
@@ -119,6 +120,8 @@ impl WindowCallbacks for GameHandler {
         OpenGLRenderer::enable_depth_test();
         OpenGLRenderer::enable_depth_buffer();
         self.ui_pipeline.advance(window, |_| {});
+
+        R.tick_all_animations();
 
         self.cloud_frame += 0.003;
     }

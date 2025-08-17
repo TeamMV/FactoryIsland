@@ -23,9 +23,11 @@ use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
 use std::ops::Deref;
+use log::warn;
 use mvengine::ui::page::Page;
 use ropey::Rope;
-use crate::ui::manager::UI_SETTINGS_SCREEN;
+use crate::ui::manager::{UI_SETTINGS_SCREEN, UI_STATUS_SCREEN};
+use crate::ui::status_screen::STATUS_MSG;
 use crate::uistyles;
 
 pub struct Mainscreen {
@@ -100,10 +102,17 @@ impl GameUiCallbacks for Mainscreen {
             if let MouseButton::Left = event.button {
                 if let UiClickAction::Click = event.base.action {
                     let ip = self.server_ip.read().to_string();
-                    let client = Client::connect(ip, game_handler.this.deref().upgrade().expect("This can never be invalid!")).expect("Cannot connect to local server");
-                    game_handler.client = Some(client);
+                    let conn = Client::connect(ip.clone(), game_handler.this.deref().upgrade().expect("This can never be invalid!"));
+                    if let Some(client) = conn {
+                        game_handler.client = Some(client);
 
-                    game_handler.ui_manager.close_all(window);
+                        game_handler.ui_manager.close_all(window);
+                    } else {
+                        warn!("Cannot connect to server: {ip}");
+                        let mut lock = STATUS_MSG.write();
+                        *lock = Rope::from_str("Cannot connect to server!");
+                        game_handler.ui_manager.goto(UI_STATUS_SCREEN, window);
+                    }
                 }
             }
         }

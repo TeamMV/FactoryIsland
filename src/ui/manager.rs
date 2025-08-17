@@ -7,12 +7,14 @@ use mvengine::ui::elements::UiElementStub;
 use mvengine::window::Window;
 use crate::game::Game;
 use crate::ui::settings::SettingsScreen;
+use crate::ui::status_screen::StatusScreen;
 
-pub const AMT_UIS: usize = 3;
+pub const AMT_UIS: usize = 4;
 
 pub const UI_MAIN_SCREEN: usize = 0;
 pub const UI_ESCAPE_SCREEN: usize = 1;
 pub const UI_SETTINGS_SCREEN: usize = 2;
+pub const UI_STATUS_SCREEN: usize = 3;
 
 pub struct GameUiManager {
     current: Option<usize>,
@@ -27,6 +29,7 @@ impl GameUiManager {
                 GameUi::new(Mainscreen::new(window)).expect("vanilla stuff that cannot break"),
                 GameUi::new(EscapeScreen::new(window)).expect("vanilla stuff that cannot break"),
                 GameUi::new(SettingsScreen::new(window, game)).expect("vanilla stuff that cannot break"),
+                GameUi::new(StatusScreen::new(window)).expect("vanilla stuff that cannot break"),
             ]
         };
 

@@ -3,6 +3,7 @@ pub mod mainscreen;
 pub mod escape_screen;
 pub mod display;
 pub mod settings;
+pub mod status_screen;
 
 use std::any::Any;
 use log::{debug, error};
