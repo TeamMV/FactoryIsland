@@ -30,6 +30,8 @@ r! {
             <texture name="tile_wood" src="textures/tiles/wood.png"/>
             <texture name="tile_generator" src="textures/tiles/generator.png"/>
 
+            <texture name="ingredient_stone" src="textures/ingredients/stone.png"/>
+
             <texture name="player" src="textures/player.png"/>
             <texture name="bg" src="textures/bg.png"/>
         </textures>
@@ -44,9 +46,12 @@ r! {
                 <entry name="on" index="0"/>
                 <entry name="off" index="1"/>
             </tileset>
+            <tileset name="conveyor" atlas="textures/tiles/conveyor.png" width="64" height="64" count="4">
+                <entry name="base" index="0"/>
+            </tileset>
         </tilesets>
         <animations>
-
+            <animation name="conveyor" tileset="conveyor" range=".." fps="24"/>
         </animations>
         <drawables>
             <drawable name="bg" type="texture" ref="bg"/>

@@ -11,6 +11,8 @@ use mvengine::rendering::RenderContext;
 use mvengine::ui::geometry::SimpleRect;
 use mvengine::ui::rendering::adaptive::AdaptiveFill;
 use mvengine::ui::rendering::WideRenderContext;
+use api::world::tiles::Orientation;
+use crate::drawutils::Fill;
 
 pub const PADDING_FACTOR: i32 = 4;
 
@@ -85,13 +87,13 @@ impl ClientPlayer {
 
 
     pub fn draw(&self, ctx: &mut impl WideRenderContext, tile_size: i32) {
-        let fill = AdaptiveFill::Drawable(Drawable::Texture(R.texture.player));
+        let fill = Fill::Drawable(Drawable::Texture(R.texture.player), Orientation::North);
         let z = ctx.next_z();
         drawutils::draw_in_world(ctx, &self.camera.view_area, self.pos, (1.0, 1.0), fill, tile_size, z);
     }
 
     pub fn draw_from_other_pov(&self, ctx: &mut impl WideRenderContext, view_area: &SimpleRect, tile_size: i32) {
-        let fill = AdaptiveFill::Drawable(Drawable::Texture(R.texture.player));
+        let fill = Fill::Drawable(Drawable::Texture(R.texture.player), Orientation::North);
         let z = ctx.next_z();
         drawutils::draw_in_world(ctx, view_area, self.pos, (1.0, 1.0), fill, tile_size, z);
     }

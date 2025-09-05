@@ -1,13 +1,13 @@
 use crate::game::Game;
 use crate::gameloop::FactoryIslandClient;
 use crate::gamesettings::GameSettings;
-use crate::input;
+use crate::{drawutils, input};
 use crate::player::ClientPlayer;
 use crate::rendering::WorldShaders;
 use crate::ui::display::chat::Chat;
 use crate::ui::display::TileSelection;
 use crate::world::ClientWorld;
-use api::server::packets::common::{ClientDataPacket, ServerStatePacket};
+use api::server::packets::common::{ClientDataPacket, ServerStatePacket, TileKind};
 use api::server::packets::world::TileSetFromClientPacket;
 use api::server::{ClientBoundPacket, ServerBoundPacket};
 use api::world::tiles::pos::TilePos;
@@ -17,7 +17,7 @@ use mvengine::math::vec::Vec2;
 use mvengine::modify_style;
 use mvengine::net::server::ClientId;
 use mvengine::rendering::pipeline::RenderingPipeline;
-use mvengine::rendering::OpenGLRenderer;
+use mvengine::rendering::{OpenGLRenderer, RenderContext, CLEAR_FLAG};
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::{Element, UiElementStub};
@@ -28,8 +28,15 @@ use mvengine_proc::ui;
 use mvutils::hashers::U64IdentityHasher;
 use mvutils::thread::ThreadSafe;
 use std::collections::HashMap;
-use crate::input::ESCAPE;
+use std::sync::atomic::Ordering;
+use log::trace;
+use mvengine::ui::rendering::adaptive::AdaptiveFill;
+use mvengine::ui::rendering::WideRenderContext;
+use api::ingredients::IngredientKind;
+use crate::drawutils::Fill;
+use crate::input::{ESCAPE, ROTATE_L, ROTATE_R};
 use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
+use crate::world::tiles::impls::CLIENT_TILE_REG;
 
 type RP = RenderingPipeline<OpenGLRenderer>;
 
@@ -38,17 +45,20 @@ pub struct WorldView {
     //ui
     click_area: ThreadSafe<Element>,
     pub tile_selection: TileSelection,
+    pub ingredients: Vec<IngredientKind>,
     pub chat: Chat,
 
-    //gamehi
+    //game
     pub world: ClientWorld,
     pub tile_size: i32,
     pub player: ClientPlayer,
     pub other_players: HashMap<ClientId, ClientPlayer, U64IdentityHasher>,
+    pub orientation: Orientation,
 
     //rendering
     world_pipeline: RP,
     player_pipeline: RP,
+    overlay_pipeline: RP,
     cloud_frame: u64,
     initialized: bool,
 }
@@ -72,15 +82,32 @@ impl WorldView {
         //Unwrap here cuz what are ya gonna do without rendering
         let mut world_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
         world_pipeline.create_post(window);
-        let [ssao, clouds] = [shaders.ssao, shaders.clouds];
+        //for custom blend shader
+        world_pipeline.use_custom_backbuffer(window);
+        let [
+            ssao,
+            clouds,
+            overlay,
+            overlay_blend
+        ] = [
+            shaders.ssao,
+            shaders.clouds,
+            shaders.overlay,
+            shaders.overlay_blend,
+        ];
         world_pipeline.add_post_step(ssao);
         world_pipeline.add_post_step(clouds);
 
         let player_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
+        let mut overlay_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
+        overlay_pipeline.create_post(window);
+        overlay_pipeline.add_post_step(overlay);
+        overlay_pipeline.use_custom_blend_shader(overlay_blend);
 
         let mut this = Self {
             click_area: ThreadSafe::new(click_area),
             tile_selection: TileSelection::new(window, server_state_packet.tiles.into_iter()),
+            ingredients: server_state_packet.ingredients,
             chat: Chat::new(window),
             world: ClientWorld::new(),
             tile_size: 50,
@@ -90,8 +117,10 @@ impl WorldView {
                 client_id: server_state_packet.client_id,
             }),
             other_players: map,
+            orientation: Orientation::North,
             world_pipeline,
             player_pipeline,
+            overlay_pipeline,
             cloud_frame: 0,
             initialized: false,
         };
@@ -119,6 +148,7 @@ impl WorldView {
         }
         self.world_pipeline.resize(window);
         self.player_pipeline.resize(window);
+        self.overlay_pipeline.resize(window);
     }
 
     pub fn player_join(&mut self, player: ClientPlayer, id: ClientId) {
@@ -136,9 +166,10 @@ impl WorldView {
             self.world_pipeline.begin_frame();
         }
 
+        trace!("Beginning of draw");
         self.world.draw(&mut self.world_pipeline, &self.player.camera.view_area, self.tile_size);
 
-        OpenGLRenderer::enable_depth_buffer();
+        //OpenGLRenderer::enable_depth_buffer();
         //draw raw world
         self.world_pipeline.advance(window, |_| {});
 
@@ -165,8 +196,27 @@ impl WorldView {
         self.draw_players();
         self.player_pipeline.advance(window, |_| {});
 
-        if let Some(next) = next_pipeline {
-            self.player_pipeline.next_pipeline(next);
+
+        if let Some(sel) = self.tile_selection.selected_tile() {
+            self.player_pipeline.next_pipeline(&mut self.overlay_pipeline);
+
+            Self::draw_overlay(&mut self.overlay_pipeline, sel, window, &self.player, self.tile_size, self.orientation);
+            self.overlay_pipeline.advance(window, |_| {});
+            self.overlay_pipeline.advance(window, |s| {
+                s.uniform_1f("FRAME", self.cloud_frame as f32);
+            });
+
+            if let Some(next) = next_pipeline {
+                self.overlay_pipeline.next_pipeline(next);
+            } else {
+                self.overlay_pipeline.flush();
+            }
+        } else {
+            if let Some(next) = next_pipeline {
+                self.player_pipeline.next_pipeline(next);
+            } else {
+                self.player_pipeline.flush();
+            }
         }
     }
 
@@ -176,6 +226,16 @@ impl WorldView {
         }
 
         self.player.draw(&mut self.player_pipeline, self.tile_size);
+    }
+
+    pub fn draw_overlay(ctx: &mut impl WideRenderContext, sel: &TileKind, window: &Window, player: &ClientPlayer, tile_size: i32, orientation: Orientation) {
+        if let Some(tile) = CLIENT_TILE_REG.reference_object(sel.id.saturating_sub(1)) {
+            let mx = window.input.mouse_x;
+            let my = window.input.mouse_y;
+            let pos = TilePos::from_screen((mx, my), &player.camera.view_area, tile_size);
+            let y = ctx.controller().next_z();
+            drawutils::draw_in_world_tile(ctx, &player.camera.view_area, pos, Fill::Drawable(tile.base.clone(), orientation), tile_size, y);
+        }
     }
 
     pub fn on_frame(&mut self, window: &mut Window, client: &mut FactoryIslandClient, ui_manager: &mut GameUiManager) {
@@ -223,6 +283,7 @@ impl WorldView {
 
         self.cloud_frame = self.cloud_frame.wrapping_add(1);
 
+        //tile set
         if let Some(event) = &self.click_area.get().state().events.click_event {
             if event.button == MouseButton::Left && event.base.action == UiClickAction::Click {
                 if let Some(tile) = self.tile_selection.selected_tile() {
@@ -230,10 +291,26 @@ impl WorldView {
                     client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
                         pos,
                         tile_id: tile.id,
-                        tile_state: 0, //Idk use the default??? lets just say zero is ALWAYS a default lmao
+                        tile_state: vec![],
                         orientation: Orientation::North,
                     }));
                 }
+            }
+        }
+
+        if window.input.was_action(ROTATE_L) {
+            self.orientation = match self.orientation {
+                Orientation::North => Orientation::West,
+                Orientation::South => Orientation::East,
+                Orientation::East => Orientation::North,
+                Orientation::West => Orientation::South
+            }
+        } else if window.input.was_action(ROTATE_R) {
+            self.orientation = match self.orientation {
+                Orientation::North => Orientation::East,
+                Orientation::South => Orientation::West,
+                Orientation::East => Orientation::South,
+                Orientation::West => Orientation::North
             }
         }
     }

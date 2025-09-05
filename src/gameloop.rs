@@ -6,7 +6,7 @@ use crate::rendering::WorldShaders;
 use crate::res::R;
 use crate::ui::manager;
 use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
-use crate::{debug, gamesettings, input};
+use crate::{debug, gamesettings, input, world};
 use api::registry;
 use api::server::packets::common::{ClientDataPacket, ServerStatePacket};
 use api::server::{ClientBoundPacket, ServerBoundPacket};
@@ -21,7 +21,7 @@ use mvengine::rendering::control::RenderController;
 use mvengine::rendering::pipeline::RenderingPipeline;
 use mvengine::rendering::post::OpenGLPostProcessRenderer;
 use mvengine::rendering::shader::default::DefaultOpenGLShader;
-use mvengine::rendering::OpenGLRenderer;
+use mvengine::rendering::{OpenGLRenderer, CLEAR_FLAG};
 use mvengine::ui::rendering::UiRenderer;
 use mvengine::window::app::WindowCallbacks;
 use mvengine::window::Window;
@@ -31,6 +31,7 @@ use mvutils::unsafe_utils::Unsafe;
 use parking_lot::RwLock;
 use std::ops::Deref;
 use std::sync::{Arc, Weak};
+use std::sync::atomic::Ordering;
 use std::time::Instant;
 use mvengine::ui::context::UiResources;
 use mvengine::ui::geometry::shape::shapes;
@@ -78,6 +79,7 @@ impl WindowCallbacks for GameHandler {
     fn post_init(&mut self, window: &mut Window) {
         unsafe {
             R::initialize();
+            world::tiles::impls::register_tiles();
             window.ui_mut().init(R.deref().deref());
 
             self.game.load_client_res();
@@ -106,6 +108,8 @@ impl WindowCallbacks for GameHandler {
         self.game.on_frame(window, &mut self.client, &mut self.ui_manager);
 
         OpenGLRenderer::clear();
+        OpenGLRenderer::enable_depth_test();
+        OpenGLRenderer::enable_depth_buffer();
         if let Some(view) = &mut self.game.world_view {
             view.draw(window, None, Some(&mut self.ui_pipeline), &self.game.settings);
         } else {
@@ -117,9 +121,10 @@ impl WindowCallbacks for GameHandler {
 
         let a = window.area();
         window.ui_mut().draw(&mut *self.ui_pipeline, &a);
-        OpenGLRenderer::enable_depth_test();
-        OpenGLRenderer::enable_depth_buffer();
+        //OpenGLRenderer::disable_depth_test();
+        //OpenGLRenderer::enable_depth_buffer();
         self.ui_pipeline.advance(window, |_| {});
+        self.ui_pipeline.flush();
 
         R.tick_all_animations();
 

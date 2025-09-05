@@ -1,14 +1,14 @@
 pub mod tiles;
 pub mod terrain_tex_mapper;
-pub mod tile_tex_mapper;
 
-use crate::world::tiles::{ClientTile, TileDraw};
+use crate::world::tiles::{LoadedClientTile, TileDraw};
 use api::server::packets::world::{ChunkDataPacket, TileSetPacket};
 use api::world::chunk::{Chunk, CHUNK_TILES};
 use api::world::{ChunkPos, CHUNK_SIZE};
 use mvengine::rendering::RenderContext;
 use mvengine::ui::geometry::SimpleRect;
 use std::collections::HashMap;
+use mvengine::ui::rendering::WideRenderContext;
 use crate::game::Game;
 
 pub struct ClientWorld {
@@ -16,8 +16,8 @@ pub struct ClientWorld {
 }
 
 pub struct ClientChunk {
-    terrain: Box<[ClientTile]>,
-    tiles: Box<[Option<ClientTile>]>
+    terrain: Box<[LoadedClientTile]>,
+    tiles: Box<[Option<LoadedClientTile>]>
 }
 
 impl ClientWorld {
@@ -28,24 +28,30 @@ impl ClientWorld {
     }
 
     pub fn sync(&mut self, packet: TileSetPacket, game: &Game) {
-        let tile = ClientTile::from_server_tile(packet.tile, game, false);
-        let pos = (packet.pos.chunk_pos.x, packet.pos.chunk_pos.z);
-        if let Some(chunk) = self.loaded.get_mut(&pos) {
-            chunk.tiles[Chunk::get_index(&packet.pos)] = Some(tile);
+        if let Some(tile) = LoadedClientTile::from_server_tile(packet.tile, game, false) {
+            let pos = (packet.pos.chunk_pos.x, packet.pos.chunk_pos.z);
+            if let Some(chunk) = self.loaded.get_mut(&pos) {
+                chunk.tiles[Chunk::get_index(&packet.pos)] = Some(tile);
+            }
         }
     }
 
     pub fn sync_chunk(&mut self, packet: ChunkDataPacket, game: &Game) {
         let terrain = (0..CHUNK_TILES)
-            .map(|i| ClientTile::from_server_tile(packet.data.terrain[i].clone(), game, true))
+            .map(|i| {
+                LoadedClientTile::from_server_tile(packet.data.terrain[i].clone(), game, true).expect("terrain tile")
+            })
             .collect::<Vec<_>>()
             .into_boxed_slice();
 
         let tiles = (0..CHUNK_TILES)
             .map(|i| {
-                packet.data.tiles[i].as_ref().map(|obj| {
-                    ClientTile::from_server_tile(obj.clone(), game, false)
-                })
+                if let Some(obj ) = &packet.data.tiles[i] {
+                    let loaded = LoadedClientTile::from_server_tile(obj.clone(), game, false);
+                    loaded
+                } else {
+                    None
+                }
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
@@ -66,7 +72,7 @@ impl ClientWorld {
         self.loaded.clear();
     }
 
-    pub fn draw(&self, renderer: &mut impl RenderContext, view_area: &SimpleRect, tile_size: i32) {
+    pub fn draw(&self, renderer: &mut impl WideRenderContext, view_area: &SimpleRect, tile_size: i32) {
         for (pos, chunk) in self.loaded.iter() {
             let chunk_area = SimpleRect::new(pos.0 * CHUNK_SIZE * tile_size, pos.1 * CHUNK_SIZE * tile_size, CHUNK_SIZE * tile_size, CHUNK_SIZE * tile_size);
             if view_area.intersects(&chunk_area) {
@@ -79,8 +85,12 @@ impl ClientWorld {
                         let terrain_height = 1000 - terrain.id as i32 * 100;
                         terrain.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height);
                         if let Some(tile) = &chunk.tiles[i] {
-                            let orientation = tile.orientation;
-                            tile.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height - 101);
+                            if let Some(drawer) = tile.drawer {
+                                drawer(renderer, view_area, &pos, tile_size, tile);
+                            } else {
+                                let orientation = tile.orientation;
+                                tile.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height - 101);
+                            }
                         }
                     }
                 }

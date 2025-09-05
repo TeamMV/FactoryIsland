@@ -16,6 +16,7 @@ mod rendering;
 mod ui;
 mod uistyles;
 mod gamesettings;
+mod ingredients;
 
 use std::{env, fs};
 use std::fs::{File, OpenOptions};

@@ -1,6 +1,6 @@
 use crate::game::Game;
 use log::{error, info};
-use mvengine::input::registry::RawInput;
+use mvengine::input::registry::{Direction, RawInput};
 use mvengine::input::Input;
 use std::collections::HashMap;
 use std::fs;
@@ -14,6 +14,8 @@ pub const MOVE_RIGHT: &str = "move_right";
 pub const ESCAPE: &str = "escape";
 pub const CHAT: &str = "chat";
 pub const RELOAD_CHUNKS: &str = "reload_chunks";
+pub const ROTATE_L: &str = "rotatel";
+pub const ROTATE_R: &str = "rotater";
 
 pub const PATH: &str = ".factoryisland/";
 
@@ -29,6 +31,8 @@ impl InputManager {
         actions.create_action(ESCAPE);
         actions.create_action(CHAT);
         actions.create_action(RELOAD_CHUNKS);
+        actions.create_action(ROTATE_L);
+        actions.create_action(ROTATE_R);
 
         //defaults, get overridden by file
         actions.bind_action(MOVE_FORWARD, vec![RawInput::KeyPress(Key::W)]);
@@ -38,6 +42,8 @@ impl InputManager {
         actions.bind_action(ESCAPE, vec![RawInput::KeyPress(Key::Escape)]);
         actions.bind_action(CHAT, vec![RawInput::KeyPress(Key::Return)]);
         actions.bind_action(RELOAD_CHUNKS, vec![RawInput::KeyPress(Key::F3), RawInput::KeyPress(Key::R)]);
+        actions.bind_action(ROTATE_L, vec![RawInput::Scroll(Direction::Up)]);
+        actions.bind_action(ROTATE_R, vec![RawInput::Scroll(Direction::Down)]);
 
         let dir = game.configuration_directory();
         if let Ok(_) = input.load_actions(dir) {

@@ -1,12 +1,12 @@
 pub mod chat;
 
+use log::debug;
 use mvengine::color::RgbColor;
 use mvengine::ui::styles::{UiStyle, UiValue, EMPTY_STYLE};
 use mvengine::ui::elements::button::Button;
 use mvengine::ui::elements::child::{Child, ToChildFromIterator};
 use mvengine::{expect_element_by_id, modify_style};
 use mvengine_proc::style_expr;
-use crate::world::tile_tex_mapper::get_tile_drawable;
 use api::server::packets::common::TileKind;
 use mvengine::graphics::Drawable;
 use mvengine::input::consts::MouseButton;
@@ -21,6 +21,7 @@ use mvengine_proc::ui;
 use mvutils::lazy;
 use mvutils::thread::ThreadSafe;
 use api::registry::ObjectSource;
+use crate::world::tiles::impls::CLIENT_TILE_REG;
 
 lazy! {
     static SELECT_STYLE: UiStyle = {
@@ -155,6 +156,14 @@ fn get_drawable(kind: &TileKind) -> Drawable {
     if let ObjectSource::Mod(m) = &kind.source {
         Drawable::missing() //first get the rest to compile again
     } else {
-        get_tile_drawable(kind.id, 0)
+        if kind.id >= 1 {
+            if let Some(template) = CLIENT_TILE_REG.create_object(kind.id - 1) {
+                template.base
+            } else {
+                Drawable::missing()
+            }
+        } else {
+            Drawable::missing()
+        }
     }
 }
