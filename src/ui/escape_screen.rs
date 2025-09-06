@@ -99,6 +99,9 @@ impl GameUiCallbacks for EscapeScreen {
                         client.disconnect(DisconnectReason::Disconnected);
                     }
                     game_handler.client = None;
+                    if let Some(view) = &mut game_handler.game.world_view {
+                        view.close(window);
+                    }
                     game_handler.ui_manager.goto(UI_MAIN_SCREEN ,window);
                 }
             }

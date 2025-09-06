@@ -94,7 +94,7 @@ impl Chat {
     }
 
     pub fn push_message(&mut self, packet: OtherPlayerChatPacket) {
-        let name = format!("<{}> ", packet.player.data.name);
+        let name = format!("<{}> ", packet.player.data.profile.name);
         self.create_message_element(name, packet.message);
     }
     

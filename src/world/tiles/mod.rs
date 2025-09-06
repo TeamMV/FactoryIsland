@@ -21,13 +21,15 @@ use std::ops::Deref;
 use bytebuffer::ByteBuffer;
 use log::{debug, error, trace};
 use mvengine::graphics::Drawable;
+use mvengine::ui::rendering::WideRenderContext;
 use mvutils::bytebuffer::ByteBufferExtras;
 use api::registry::ObjectSource;
 use crate::drawutils;
+use crate::drawutils::Fill;
 use crate::world::tiles::impls::{ClientStateTile, CustomDraw, CLIENT_TILE_REG};
 
 pub trait TileDraw {
-    fn draw(&self, ctx: &mut impl RenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32);
+    fn draw(&self, ctx: &mut impl WideRenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32);
 }
 
 pub struct LoadedClientTile {
@@ -55,6 +57,7 @@ impl LoadedClientTile {
 
 impl LoadedClientTile {
     pub fn from_server_tile(server_tile: ToClientObject, game: &Game, is_terrain: bool) -> Option<Self> {
+        //todo fix orienation not working lol
         let orientation = server_tile.orientation;
         let state = server_tile.state;
         match &server_tile.source {
@@ -121,16 +124,14 @@ impl LoadedClientTile {
 }
 
 impl TileDraw for LoadedClientTile {
-    fn draw(&self, ctx: &mut impl RenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32) {
+    fn draw(&self, ctx: &mut impl WideRenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32) {
         if self.id != 0 {
-            let (tex, uv) = self.texture.get_texture();
-            let uv = orientation.apply(uv.as_uv());
-            let tile_rect = SimpleRect::new(pos.raw.0 * tile_size, pos.raw.1 * tile_size, tile_size, tile_size);
-            drawutils::tile_rect(ctx, uv, &tile_rect, view_area, tex, y);
+            drawutils::draw_in_world_tile(ctx, view_area, pos.clone(), Fill::ClientDrawable(self.texture.clone(), orientation), tile_size, y as f32);
         }
     }
 }
 
+#[derive(Clone)]
 pub enum ClientDrawable {
     Texture(&'static Texture),
     Animation(&'static GlobalAnimation<'static>),

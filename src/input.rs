@@ -46,14 +46,14 @@ impl InputManager {
         actions.bind_action(ROTATE_R, vec![RawInput::Scroll(Direction::Down)]);
 
         let dir = game.configuration_directory();
-        if let Ok(_) = input.load_actions(dir) {
+        if let Ok(_) = input.load_actions(dir.path()) {
             info!("Loaded input actions from file");
         }
     }
 
     pub fn close(game: &Game, input: &mut Input) {
         let dir = game.configuration_directory();
-        if let Err(e) = input.save_actions(dir) {
+        if let Err(e) = input.save_actions(dir.path()) {
             error!("Error when saving actions: {}", e);
         }
     }

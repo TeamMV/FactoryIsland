@@ -20,6 +20,7 @@ pub struct SettingsScreen {
 
     pub enable_clouds: State<bool>,
     pub enable_ssao: State<bool>,
+    pub indicator_circle: State<bool>
 }
 
 impl SettingsScreen {
@@ -30,6 +31,7 @@ impl SettingsScreen {
 
         let enable_clouds = game.settings.cloud_shader.clone();
         let enable_ssao = game.settings.ssao_shader.clone();
+        let indicator_circle = game.settings.indicator_circle.clone();
 
         let elem = ui! {
             <Ui context={window.ui().context()}>
@@ -38,6 +40,7 @@ impl SettingsScreen {
                         <Button style={uistyles::CLEAR_PRESET.clone()}>- Settings -</Button>
                         <CheckBox selected={enable_clouds.clone()} style={checkbox_style.clone()}>Cloud Shader</CheckBox>
                         <CheckBox selected={enable_ssao.clone()} style={checkbox_style.clone()}>SSAO Shader</CheckBox>
+                        <CheckBox selected={indicator_circle.clone()} style={checkbox_style.clone()}>Fat indicator circle</CheckBox>
                         <Button style={widget.clone()} id="back_btn">Back</Button>
                     </Div>
                 </Div>
@@ -51,6 +54,7 @@ impl SettingsScreen {
             back_btn: ThreadSafe::new(back_btn),
             enable_clouds,
             enable_ssao,
+            indicator_circle,
         }
     }
 }

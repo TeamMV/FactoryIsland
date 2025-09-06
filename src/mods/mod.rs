@@ -3,6 +3,7 @@ use std::{fs, io};
 use std::path::PathBuf;
 use bytebuffer::ByteBuffer;
 use log::{error, info};
+use mvengine::game::fs::smartdir::SmartDir;
 use mvengine::ui::res::runtime::RuntimeResources;
 use mvutils::bytebuffer::ByteBufferExtras;
 use mvutils::save::Savable;
@@ -18,9 +19,9 @@ impl LocalModManager {
         }
     }
 
-    pub fn load_all(&mut self, directory: &PathBuf) -> io::Result<()>{
+    pub fn load_all(&mut self, directory: &SmartDir) -> io::Result<()>{
         info!("Loading client resources...");
-        let paths = fs::read_dir(directory)?;
+        let paths = fs::read_dir(directory.path())?;
         for path in paths {
             let path = path?;
             let path = path.path();

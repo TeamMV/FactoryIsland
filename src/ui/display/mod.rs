@@ -134,6 +134,10 @@ impl TileSelection {
                         if let Some(prev) = self.selected_index {
                             let prev_btn = &self.buttons[prev];
                             prev_btn.as_ref().get_mut().style_mut().merge_at_set_of(&NO_SELECT_STYLE);
+                            if prev == i {
+                                self.selected_index = None;
+                                return;
+                            }
                         }
                         self.selected_index = Some(i);
                         elem.style_mut().merge_at_set_of(&SELECT_STYLE);

@@ -8,6 +8,7 @@ pub(crate) const SETTINGS_FILE: &str = "settings.sav";
 pub struct GameSettings {
     pub ssao_shader: State<bool>,
     pub cloud_shader: State<bool>,
+    pub indicator_circle: State<bool>,
 }
 
 impl GameSettings {
@@ -15,6 +16,7 @@ impl GameSettings {
         Self {
             ssao_shader: State::new(true),
             cloud_shader: State::new(true),
+            indicator_circle: State::new(true),
         }
     }
 }

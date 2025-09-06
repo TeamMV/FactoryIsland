@@ -5,24 +5,22 @@ layout (location = 0) out vec4 outColor;
 
 uniform sampler2D COLOR;
 uniform sampler2D DEPTH;
-uniform vec2 RES;
+uniform sampler2D NOISE;
 
+uniform vec2 RES;
 uniform float FRAME;
 uniform float SPEED = 0.1;
 
 void main() {
+    float time = FRAME * SPEED;
     vec4 color = texture(COLOR, fUv);
 
-    float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-
-    float mask = step(0.001, gray);
-
-    //vec3 tint = vec3(1.0, 1.0, 1.0);
-    vec3 base = color.rgb;
-
-    vec3 hologramRGB = base;
-
-    float alpha = mix(0.8, 1.0, (sin(FRAME * SPEED) * 0.5 + 0.5)) * mask;
-
-    outColor = vec4(hologramRGB, alpha);
+    float s = (sin(time) + 1.0) * 0.5;
+    vec2 noiseUv = vec2(fUv.x + s, fUv.y + time) * 2.0;
+    noiseUv.x = mod(noiseUv.x, 1.0);
+    noiseUv.y = mod(noiseUv.y, 1.0);
+    vec4 noise = texture(NOISE, noiseUv);
+    vec4 changed = color;
+    changed.a = 1.0 - noise.r * 0.6;
+    outColor = mix(color, changed, s);
 }

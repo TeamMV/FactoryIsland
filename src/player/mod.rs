@@ -1,17 +1,20 @@
+use log::debug;
 use crate::camera::Camera;
 use crate::drawutils;
 use crate::gameloop::FactoryIslandClient;
 use crate::res::R;
 use api::server::packets::common::ClientDataPacket;
-use api::server::packets::player::PlayerMovePacket;
+use api::server::packets::player::{PlayerDataPacket, PlayerMovePacket};
 use api::server::ServerBoundPacket;
-use api::world::{resolve_unit, TileUnit};
+use api::world::{resolve_unit, SingleTileUnit, TileUnit};
 use mvengine::graphics::Drawable;
+use mvengine::math::vec::Vec2;
 use mvengine::rendering::RenderContext;
-use mvengine::ui::geometry::SimpleRect;
-use mvengine::ui::rendering::adaptive::AdaptiveFill;
+use mvengine::ui::geometry::{geom, SimpleRect};
 use mvengine::ui::rendering::WideRenderContext;
+use api::player::profile::PlayerProfile;
 use api::world::tiles::Orientation;
+use api::world::tiles::pos::{TileDistance, TilePos};
 use crate::drawutils::Fill;
 
 pub const PADDING_FACTOR: i32 = 4;
@@ -20,7 +23,8 @@ pub struct ClientPlayer {
     pos: TileUnit,
     pub(crate) camera: Camera,
     pub data: ClientDataPacket,
-    pub speed: f64
+    pub speed: f64,
+    pub reach: SingleTileUnit,
 }
 
 impl ClientPlayer {
@@ -30,6 +34,7 @@ impl ClientPlayer {
             camera: Camera::new(view_width, view_height),
             data,
             speed: 20.0,
+            reach: 7.0,
         }
     }
 
@@ -85,6 +90,11 @@ impl ClientPlayer {
         }
     }
 
+    pub fn data_packet(&mut self, packet: PlayerDataPacket, tile_size: i32) {
+        self.reach = packet.reach;
+        self.pos = packet.pos;
+        self.update_cam(tile_size)
+    }
 
     pub fn draw(&self, ctx: &mut impl WideRenderContext, tile_size: i32) {
         let fill = Fill::Drawable(Drawable::Texture(R.texture.player), Orientation::North);
@@ -96,5 +106,21 @@ impl ClientPlayer {
         let fill = Fill::Drawable(Drawable::Texture(R.texture.player), Orientation::North);
         let z = ctx.next_z();
         drawutils::draw_in_world(ctx, view_area, self.pos, (1.0, 1.0), fill, tile_size, z);
+    }
+
+    pub fn pos(&self) -> TileUnit {
+        self.pos
+    }
+
+    pub fn profile(&self) -> &PlayerProfile {
+        &self.data.profile
+    }
+}
+
+impl TileDistance for ClientPlayer {
+    fn distance(&self, from: &TilePos) -> SingleTileUnit {
+        let v1 = Vec2::new(self.pos.0 as f32, self.pos.1 as f32);
+        let v2 = Vec2::from_i32s(from.raw);
+        geom::distance(v1, v2) as SingleTileUnit
     }
 }

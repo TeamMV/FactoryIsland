@@ -1,4 +1,5 @@
-mod worldview;
+pub mod worldview;
+pub mod place_tile;
 
 use crate::gameloop::FactoryIslandClient;
 use crate::input;
@@ -36,20 +37,24 @@ use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use mvengine::game::fs::smartdir::SmartDir;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::rendering::WideRenderContext;
 use mvutils::unsafe_utils::Unsafe;
 use crate::game::worldview::WorldView;
-use crate::gamesettings::GameSettings;
+use crate::gamesettings::{GameSettings, SETTINGS_FILE};
+use api::player::profile::PlayerProfile;
 use crate::ui::display::chat::Chat;
 use crate::ui::manager::{GameUiManager, UI_SETTINGS_SCREEN};
-use crate::ui::settings::{SettingsScreen};
+use crate::ui::settings::SettingsScreen;
 
 pub struct Game {
-    pub conf_dir: PathBuf,
+    pub conf_dir: SmartDir,
+    pub res_dir: SmartDir,
     pub client_resources: LocalModManager,
     pub settings: GameSettings,
-    pub world_view: Option<WorldView>
+    pub world_view: Option<WorldView>,
+    pub profile: PlayerProfile
 }
 
 impl Game {
@@ -60,17 +65,23 @@ impl Game {
 
         let local_mods = LocalModManager::new();
 
+        let conf_dir = SmartDir::new(full);
+        let res_dir = conf_dir.join("resources");
+
+        let profile = PlayerProfile::load_or_create(&conf_dir);
+
         Self {
-            conf_dir: full,
+            conf_dir,
+            res_dir,
             client_resources: local_mods,
             settings: GameSettings::new(),
             world_view: None,
+            profile,
         }
     }
     
     pub fn load_client_res(&mut self) {
-        let client_mod_path = Path::join(&self.conf_dir, "resources");
-        if let Err(e) = self.client_resources.load_all(&client_mod_path) {
+        if let Err(e) = self.client_resources.load_all(&self.res_dir) {
             error!("Error when loading client resources: {e}");
         };
     }
@@ -90,55 +101,31 @@ impl Game {
     }
     
     pub fn on_server_state(&mut self, window: &mut Window, packet: ServerStatePacket) {
-        self.world_view = Some(WorldView::new(window, packet));
+        self.world_view = Some(WorldView::new(window, packet, self));
         if let Some(view) = &mut self.world_view {
             view.open(window);
         }
     }
 
     pub fn save_settings(&self) {
-        let mut file = self.configuration_directory().clone();
-        file.push(crate::gamesettings::SETTINGS_FILE);
-        if let Ok(mut file) = File::options().write(true).truncate(true).create(true).open(&file) {
-            let mut buffer = ByteBuffer::new_le();
-            self.settings.save(&mut buffer);
-            let r = file.write_all(buffer.as_bytes());
-            if r.is_err() {
-                error!("Failed to save settings: {:?}", r.unwrap_err());
-            } else {
-                debug!("Saved settings!");
-            }
+        let dir = self.configuration_directory();
+        if let Some(_) = dir.save_object(&self.settings, SETTINGS_FILE) {
+            debug!("Saved settings!");
         }
     }
 
     pub fn load_settings(&mut self) {
-        let mut path = self.configuration_directory().clone();
-        path.push(crate::gamesettings::SETTINGS_FILE);
+        let dir = self.configuration_directory();
 
-        if let Ok(mut file) = File::open(&path) {
-            let mut data = Vec::new();
-            if let Err(e) = file.read_to_end(&mut data) {
-                error!("Failed to read settings file: {:?}", e);
-                return;
-            }
-
-            let mut buffer = ByteBuffer::from_vec(data);
-            buffer.set_endian(Endian::LittleEndian);
-            match GameSettings::load(&mut buffer) {
-                Ok(settings) => {
-                    self.settings = settings;
-                    debug!("Loaded settings!");
-                }
-                Err(e) => {
-                    error!("Failed to parse settings file: {}", e);
-                }
-            }
+        if let Some(settings) = dir.read_object::<GameSettings>(SETTINGS_FILE) {
+            self.settings = settings;
+            debug!("Loaded settings!");
         } else {
             debug!("No settings file found — skipping load.");
         }
     }
 
-    pub fn configuration_directory(&self) -> &PathBuf {
+    pub fn configuration_directory(&self) -> &SmartDir {
         &self.conf_dir
     }
 
