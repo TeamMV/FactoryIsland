@@ -28,6 +28,9 @@ r! {
             <texture name="terrain_stone" src="textures/terrain/stone.png"/>
             <texture name="terrain_water" src="textures/terrain/water.png"/>
 
+            <texture name="multitile_test" src="textures/multitiles/test.png"/>
+            <texture name="multitile_test_up" src="textures/multitiles/test_up.png"/>
+
             <texture name="tile_wood" src="textures/tiles/wood.png"/>
             <texture name="tile_generator" src="textures/tiles/generator.png"/>
 

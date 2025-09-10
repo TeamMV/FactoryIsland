@@ -289,6 +289,16 @@ impl WorldView {
                             orientation: self.orientation,
                         }));
                     }
+                } else {
+                    let pos = TilePos::from_screen((window.input.mouse_x, window.input.mouse_y), &self.player.camera.view_area, self.tile_size);
+                    if pos.distance_from(&self.player) <= self.player.reach {
+                        client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
+                            pos,
+                            tile_id: 0,
+                            tile_state: vec![],
+                            orientation: self.orientation,
+                        }));
+                    }
                 }
             }
         }
@@ -342,6 +352,25 @@ impl WorldView {
             }
             ClientBoundPacket::PlayerDataPacket(packet) => {
                 self.player.data_packet(packet, self.tile_size);
+            }
+            ClientBoundPacket::MultiTilePlacedPacket(packet) => {
+                if let Some(chunk) = self.world.get_chunk_mut(packet.placement.pos.fi_chunk_pos()) {
+                    chunk.multitiles.push(packet.placement.into());
+                }
+            }
+            ClientBoundPacket::MultiTileDestroyedPacket(packet) => {
+                if let Some(chunk) = self.world.get_chunk_mut(packet.chunk_pos) {
+                    let mut remove = None;
+                    for i in 0..chunk.multitiles.len() {
+                        if chunk.multitiles[i].uuid == packet.placement_id {
+                            remove = Some(i);
+                            break;
+                        }
+                    }
+                    if let Some(i) = remove {
+                        chunk.multitiles.remove(i);
+                    }
+                }
             }
             _ => {}
         }

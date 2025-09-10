@@ -80,6 +80,7 @@ impl WindowCallbacks for GameHandler {
         unsafe {
             R::initialize();
             world::tiles::impls::register_tiles();
+            world::multitiles::register_all();
             window.ui_mut().init(R.deref().deref());
 
             self.game.load_client_res();

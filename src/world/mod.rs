@@ -1,23 +1,31 @@
 pub mod tiles;
 pub mod terrain_tex_mapper;
+pub mod multitiles;
 
 use crate::world::tiles::{LoadedClientTile, TileDraw};
 use api::server::packets::world::{ChunkDataPacket, TileSetPacket};
 use api::world::chunk::{Chunk, CHUNK_TILES};
-use api::world::{ChunkPos, CHUNK_SIZE};
-use mvengine::rendering::RenderContext;
+use api::world::{ChunkPos, TileUnit, CHUNK_SIZE};
+use mvengine::rendering::{OpenGLRenderer, RenderContext};
 use mvengine::ui::geometry::SimpleRect;
 use std::collections::HashMap;
+use mvengine::graphics::Drawable;
 use mvengine::ui::rendering::WideRenderContext;
+use api::world::tiles::Orientation;
+use api::world::tiles::pos::TilePos;
+use crate::drawutils;
+use crate::drawutils::Fill;
 use crate::game::Game;
+use crate::world::multitiles::{ClientMultiTilePlacement, CLIENT_MULTI_REG};
 
 pub struct ClientWorld {
     loaded: HashMap<ChunkPos, ClientChunk>
 }
 
 pub struct ClientChunk {
-    terrain: Box<[LoadedClientTile]>,
-    tiles: Box<[Option<LoadedClientTile>]>
+    pub terrain: Box<[LoadedClientTile]>,
+    pub tiles: Box<[Option<LoadedClientTile>]>,
+    pub multitiles: Vec<ClientMultiTilePlacement>
 }
 
 impl ClientWorld {
@@ -27,12 +35,25 @@ impl ClientWorld {
         }
     }
 
-    pub fn sync(&mut self, packet: TileSetPacket, game: &Game) {
-        if let Some(tile) = LoadedClientTile::from_server_tile(packet.tile, game, false) {
-            let pos = (packet.pos.chunk_pos.x, packet.pos.chunk_pos.z);
-            if let Some(chunk) = self.loaded.get_mut(&pos) {
-                chunk.tiles[Chunk::get_index(&packet.pos)] = Some(tile);
+    pub fn is_multitile_at(&self, pos: &TilePos) -> bool {
+        for chunk_pos in pos.multitile_chunk_maybe_positions() {
+            if let Some(chunk) = self.loaded.get(&chunk_pos) {
+                if chunk.multitiles.iter().any(|mt| mt.includes(pos)) {
+                    return true;
+                }
             }
+        }
+        false
+    }
+
+    pub fn get_chunk_mut(&mut self, pos: ChunkPos) -> Option<&mut ClientChunk> {
+        self.loaded.get_mut(&pos)
+    }
+
+    pub fn sync(&mut self, packet: TileSetPacket, game: &Game) {
+        let pos = (packet.pos.chunk_pos.x, packet.pos.chunk_pos.z);
+        if let Some(chunk) = self.loaded.get_mut(&pos) {
+            chunk.tiles[Chunk::get_index(&packet.pos)] = LoadedClientTile::from_server_tile(packet.tile, game, false);
         }
     }
 
@@ -56,9 +77,15 @@ impl ClientWorld {
             .collect::<Vec<_>>()
             .into_boxed_slice();
 
+        let multis = packet.data.multitiles
+            .into_iter()
+            .map(Into::into)
+            .collect();
+
         let chunk = ClientChunk {
             terrain,
             tiles,
+            multitiles: multis,
         };
 
         self.loaded.insert(packet.pos, chunk);
@@ -84,6 +111,9 @@ impl ClientWorld {
                     if view_area.intersects(&tile_rect) {
                         let terrain_height = 1000 - terrain.id as i32 * 100;
                         terrain.draw(renderer, tile_size, &pos, orientation, view_area, terrain_height);
+                        if self.is_multitile_at(&pos) {
+                            continue;
+                        }
                         if let Some(tile) = &chunk.tiles[i] {
                             if let Some(drawer) = tile.drawer {
                                 drawer(renderer, view_area, &pos, tile_size, tile);
@@ -93,6 +123,18 @@ impl ClientWorld {
                             }
                         }
                     }
+                }
+                for multitile in &chunk.multitiles {
+                    let terrain = &chunk.terrain[Chunk::get_index(&multitile.pos)];
+                    let terrain_height = 1000 - terrain.id as i32 * 100;
+                    let tex = if let Some(client_mt) = &multitile.client_multi_tile {
+                        client_mt.get_relevant_texture(multitile.extent.0 > multitile.extent.1)
+                    } else {
+                        Drawable::missing()
+                    };
+                    let w = multitile.extent.0 as f64;
+                    let h = multitile.extent.1 as f64;
+                    drawutils::draw_in_world(renderer, view_area, multitile.pos.to_unit(), (w, h), Fill::Drawable(tex, Orientation::North), tile_size, (terrain_height - 101) as f32);
                 }
             }
         }
