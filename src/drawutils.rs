@@ -18,7 +18,6 @@ use crate::world::tiles::ClientDrawable;
 pub enum Fill {
     Color(RgbColor),
     Drawable(Drawable, Orientation),
-    ClientDrawable(ClientDrawable, Orientation),
 }
 
 pub fn tile_rect(ctx: &mut impl RenderContext, uv: [(f32, f32); 4], tile_rect: &SimpleRect, view_area: &SimpleRect, tex: &Texture, y: i32) {
@@ -81,24 +80,6 @@ pub fn rect(ctx: &mut impl WideRenderContext, x: i32, y: i32, w: i32, h: i32, fi
         }
         Fill::Drawable(drawable, orientation) => {
             let (tex, uv) = drawable.get_texture_or_default(R.deref().deref());
-            let uv = Texture::get_uv_inner_static(uv);
-            let uv = orientation.apply(uv);
-
-            let mut v1 = shapes::vertex1(x, y, tex.id, uv[0]);
-            let mut v2 = shapes::vertex1(x, y + h, tex.id, uv[1]);
-            let mut v3 = shapes::vertex1(x + w, y + h, tex.id, uv[2]);
-            let mut v4 = shapes::vertex1(x + w, y, tex.id, uv[3]);
-
-            for v in [&mut v1, &mut v2, &mut v3, &mut v4] {
-                v.pos.2 = z;
-            }
-
-            ctx.controller().push_quad(Quad {
-                points: [v1, v2, v3, v4],
-            });
-        }
-        Fill::ClientDrawable(drawable, orientation) => {
-            let (tex, uv) = drawable.get_texture();
             let uv = Texture::get_uv_inner_static(uv);
             let uv = orientation.apply(uv);
 

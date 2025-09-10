@@ -11,7 +11,6 @@ mod res;
 mod input;
 mod player;
 mod drawutils;
-mod mods;
 mod rendering;
 mod ui;
 mod uistyles;

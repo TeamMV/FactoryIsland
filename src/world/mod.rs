@@ -51,7 +51,7 @@ impl ClientWorld {
     }
 
     pub fn sync(&mut self, packet: TileSetPacket, game: &Game) {
-        let pos = (packet.pos.chunk_pos.x, packet.pos.chunk_pos.z);
+        let pos = packet.pos.chunk_pos;
         if let Some(chunk) = self.loaded.get_mut(&pos) {
             chunk.tiles[Chunk::get_index(&packet.pos)] = LoadedClientTile::from_server_tile(packet.tile, game, false);
         }

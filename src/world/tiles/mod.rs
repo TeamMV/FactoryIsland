@@ -34,7 +34,7 @@ pub trait TileDraw {
 
 pub struct LoadedClientTile {
     pub id: usize,
-    pub texture: ClientDrawable,
+    pub texture: Drawable,
     pub orientation: Orientation,
     pub drawer: Option<CustomDraw>,
     pub state: Option<Box<dyn ClientStateTile>>
@@ -47,7 +47,7 @@ impl LoadedClientTile {
     pub(crate) fn void() -> LoadedClientTile {
         Self {
             id: 0,
-            texture: ClientDrawable::Texture(R.resolve_texture(R.mv.texture.missing).unwrap()),
+            texture: Drawable::missing(),
             orientation: Orientation::North,
             drawer: None,
             state: None,
@@ -93,7 +93,7 @@ impl LoadedClientTile {
                         (Drawable::missing(), None, None)
                     }
                 };
-                let tex = ClientDrawable::from_drawable(drawable, R.deref().deref());
+                let tex = drawable;
                 Some(Self {
                     id: server_tile.id as usize,
                     texture: tex,
@@ -103,21 +103,7 @@ impl LoadedClientTile {
                 })
             }
             ObjectSource::Mod(modid) => {
-                let tex = if let Some(res) = game.client_resources.get(modid) {
-                    //this is fine cuz u cannot unload mods at runtime
-                    let res = unsafe { Unsafe::cast_lifetime(res) };
-                    //again here //TODO
-                    ClientDrawable::from_drawable(Drawable::missing(), res)
-                } else {
-                    ClientDrawable::Texture(R.resolve_texture(R.mv.texture.missing).unwrap())
-                };
-                Some(Self {
-                    id: server_tile.id as usize,
-                    texture: tex,
-                    orientation,
-                    drawer: None,
-                    state: None,
-                })
+                panic!("Mods arent supported!")
             }
         }
     }
@@ -126,7 +112,7 @@ impl LoadedClientTile {
 impl TileDraw for LoadedClientTile {
     fn draw(&self, ctx: &mut impl WideRenderContext, tile_size: i32, pos: &TilePos, orientation: Orientation, view_area: &SimpleRect, y: i32) {
         if self.id != 0 {
-            drawutils::draw_in_world_tile(ctx, view_area, pos.clone(), Fill::ClientDrawable(self.texture.clone(), orientation), tile_size, y as f32);
+            drawutils::draw_in_world_tile(ctx, view_area, pos.clone(), Fill::Drawable(self.texture.clone(), orientation), tile_size, y as f32);
         }
     }
 }

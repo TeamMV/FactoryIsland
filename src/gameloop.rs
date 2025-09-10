@@ -83,9 +83,6 @@ impl WindowCallbacks for GameHandler {
             world::multitiles::register_all();
             window.ui_mut().init(R.deref().deref());
 
-            self.game.load_client_res();
-
-
             let mut ui_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
             self.ui_pipeline.create(|| ui_pipeline);
 
@@ -162,16 +159,6 @@ impl ClientHandler<ClientBoundPacket> for GameHandler {
     fn on_packet(&mut self, packet: ClientBoundPacket) {
         match packet {
             ClientBoundPacket::ServerState(packet) => {
-                for mod_id in &packet.mods {
-                    if !self.game.client_resources.is_res_loaded(mod_id) {
-                        error!("Server requested resources for mod: {mod_id}, but its resources are not loaded!");
-                        if let Some(client) = &mut self.client {
-                            client.disconnect(DisconnectReason::Disconnected);
-                        }
-                        return;
-                    }
-                }
-
                 self.server_packet = Some(packet);
             }
             _ => {

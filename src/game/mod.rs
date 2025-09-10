@@ -3,7 +3,6 @@ pub mod place_tile;
 
 use crate::gameloop::FactoryIslandClient;
 use crate::input;
-use crate::mods::LocalModManager;
 use crate::player::ClientPlayer;
 use crate::ui::display::TileSelection;
 use crate::world::ClientWorld;
@@ -51,7 +50,6 @@ use crate::ui::settings::SettingsScreen;
 pub struct Game {
     pub conf_dir: SmartDir,
     pub res_dir: SmartDir,
-    pub client_resources: LocalModManager,
     pub settings: GameSettings,
     pub world_view: Option<WorldView>,
     pub profile: PlayerProfile
@@ -63,8 +61,6 @@ impl Game {
         let mut full = PathBuf::from(appdata);
         full.push(input::PATH);
 
-        let local_mods = LocalModManager::new();
-
         let conf_dir = SmartDir::new(full);
         let res_dir = conf_dir.join("resources");
 
@@ -73,17 +69,10 @@ impl Game {
         Self {
             conf_dir,
             res_dir,
-            client_resources: local_mods,
             settings: GameSettings::new(),
             world_view: None,
             profile,
         }
-    }
-    
-    pub fn load_client_res(&mut self) {
-        if let Err(e) = self.client_resources.load_all(&self.res_dir) {
-            error!("Error when loading client resources: {e}");
-        };
     }
     
     pub fn on_frame(&mut self, window: &mut Window, client: &mut Option<FactoryIslandClient>, ui_manager: &mut GameUiManager) {

@@ -354,7 +354,7 @@ impl WorldView {
                 self.player.data_packet(packet, self.tile_size);
             }
             ClientBoundPacket::MultiTilePlacedPacket(packet) => {
-                if let Some(chunk) = self.world.get_chunk_mut(packet.placement.pos.fi_chunk_pos()) {
+                if let Some(chunk) = self.world.get_chunk_mut(packet.placement.pos.chunk_pos) {
                     chunk.multitiles.push(packet.placement.into());
                 }
             }
