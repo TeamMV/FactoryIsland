@@ -1,0 +1,4 @@
+//let s = arc0[cx: 50, cy: 50, radius: 50, range_deg: 360, offset_deg: 0, tri_count: 20];
+//export s;
+let s = rect0[x: 0, y: 0, width: 20, height: 50];
+export s;

@@ -19,7 +19,22 @@ lazy! {
         direction: vertical;
         margin: none;
         padding: none;
+        overflow_x: never;
+        overflow_y: never;
     });
+
+    pub static OUTER_FRAME: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            width: 100%;
+            height: 100%;
+            padding: 2.5cm;
+            overflow_x: never;
+            overflow_y: never;
+        });
+        let mut base = CLEAR.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
 
     pub static FRAME: UiStyle = {
         let mut base = BG.clone();
@@ -27,12 +42,14 @@ lazy! {
             position: relative;
             background.resource: color;
             background.color: @R.color/ui_bg;
-            width: 50%;
-            height: 80%;
+            width: 100%;
+            height: 100%;
             child_align_x: start;
             child_align_y: start;
             direction: vertical;
             padding: 1cm;
+            overflow_x: normal;
+            overflow_y: normal;
         });
         base.merge_at_set_of(&s);
         base
@@ -66,6 +83,19 @@ lazy! {
     pub static CHECKBOX_PRESET: UiStyle = {
         let m = multiline_str_into!(style_expr_empty, {
             text.align_x: start;
+        });
+        let mut base = PRESET.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
+    pub static SLIDER_PRESET: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            detail.shape: @R.geometry/knob;
+            detail.resource: color;
+            detail.color: @R.color/ui_highlight;
+            text.color: white;
+            padding: 3mm;
         });
         let mut base = PRESET.clone();
         base.merge_at_set_of(&m);

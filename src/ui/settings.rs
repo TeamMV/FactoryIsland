@@ -4,12 +4,13 @@ use crate::ui::GameUiCallbacks;
 use crate::uistyles;
 use mvengine::expect_element_by_id;
 use mvengine::input::consts::MouseButton;
+use mvengine::modify_style;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
 use mvengine::ui::page::Page;
 use mvengine::window::Window;
-use mvengine_proc::ui;
+use mvengine_proc::{style_expr_empty, ui};
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
 use std::any::Any;
@@ -28,6 +29,9 @@ impl SettingsScreen {
         let main_style = uistyles::BG.clone();
         let widget = uistyles::PRESET.clone();
         let checkbox_style = uistyles::CHECKBOX_PRESET.clone();
+        let slider_style = uistyles::SLIDER_PRESET.clone();
+        let mut clear_style = uistyles::CLEAR.clone();
+        clear_style.merge_at_set_of(&style_expr_empty!("width: auto; height: auto; direction: horizontal;"));
 
         let enable_clouds = game.settings.cloud_shader.clone();
         let enable_ssao = game.settings.ssao_shader.clone();
@@ -36,12 +40,18 @@ impl SettingsScreen {
         let elem = ui! {
             <Ui context={window.ui().context()}>
                 <Div style={main_style} id="settings">
-                    <Div style={uistyles::FRAME.clone()}>
-                        <Button style={uistyles::CLEAR_PRESET.clone()}>- Settings -</Button>
-                        <CheckBox selected={enable_clouds.clone()} style={checkbox_style.clone()}>Cloud Shader</CheckBox>
-                        <CheckBox selected={enable_ssao.clone()} style={checkbox_style.clone()}>SSAO Shader</CheckBox>
-                        <CheckBox selected={indicator_circle.clone()} style={checkbox_style.clone()}>Fat indicator circle</CheckBox>
-                        <Button style={widget.clone()} id="back_btn">Back</Button>
+                    <Div style={uistyles::OUTER_FRAME.clone()}>
+                        <Div style={uistyles::FRAME.clone()}>
+                            <Button style={uistyles::CLEAR_PRESET.clone()}>- Settings -</Button>
+                            <CheckBox selected={enable_clouds.clone()} style={checkbox_style.clone()}>Cloud Shader</CheckBox>
+                            <CheckBox selected={enable_ssao.clone()} style={checkbox_style.clone()}>SSAO Shader</CheckBox>
+                            <CheckBox selected={indicator_circle.clone()} style={checkbox_style.clone()}>Fat indicator circle</CheckBox>
+                            <Div style={clear_style}>
+                                <Button style={uistyles::CLEAR_PRESET.clone()}>Simulation distance:</Button>
+                                <Slider style={slider_style} range="1..10@1"/>
+                            </Div>
+                            <Button style={widget.clone()} id="back_btn">Back</Button>
+                        </Div>            
                     </Div>
                 </Div>
             </Ui>

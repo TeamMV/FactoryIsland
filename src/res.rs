@@ -20,6 +20,7 @@ r! {
         </dimensions>
         <shapes>
             <shape name="tick" src="shapes/tick.msfx" language="MSFX"/>
+            <shape name="knob" src="shapes/knob.msfx" language="MSFX"/>
         </shapes>
         <textures>
             <texture name="noise" src="textures/noise.png"/>
@@ -62,6 +63,7 @@ r! {
         </drawables>
         <geometries>
             <geometry name="tick" type="shape" ref="tick"/>
+            <geometry name="knob" type="shape" ref="knob"/>
         </geometries>
     </resources>
 }
