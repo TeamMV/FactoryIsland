@@ -26,7 +26,7 @@ impl GameUiManager {
         let this = Self {
             current: None,
             uis: [
-                GameUi::new(Mainscreen::new(window)).expect("vanilla stuff that cannot break"),
+                GameUi::new(Mainscreen::new(window, game)).expect("vanilla stuff that cannot break"),
                 GameUi::new(EscapeScreen::new(window)).expect("vanilla stuff that cannot break"),
                 GameUi::new(SettingsScreen::new(window, game)).expect("vanilla stuff that cannot break"),
                 GameUi::new(StatusScreen::new(window)).expect("vanilla stuff that cannot break"),

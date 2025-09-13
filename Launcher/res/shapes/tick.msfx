@@ -1,0 +1,10 @@
+let s = begin[mode: 1]:
+    vertex[x: 0, y: 40];
+    vertex[x: 20, y: 70];
+    vertex[x: 40, y: 0];
+    vertex[x: 40, y: 40];
+    vertex[x: 100, y: 70];
+    vertex[x: 70, y: 100];
+end;
+
+export s;

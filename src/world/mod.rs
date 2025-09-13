@@ -4,13 +4,14 @@ pub mod multitiles;
 
 use crate::world::tiles::{LoadedClientTile, TileDraw};
 use api::server::packets::world::{ChunkDataPacket, TileSetPacket};
-use api::world::chunk::{Chunk, CHUNK_TILES};
-use api::world::{ChunkPos, TileUnit, CHUNK_SIZE};
+use api::world::chunk::{Chunk, ToClientObject, CHUNK_TILES};
+use api::world::{ChunkPos, TileSetReason, TileUnit, CHUNK_SIZE};
 use mvengine::rendering::{OpenGLRenderer, RenderContext};
 use mvengine::ui::geometry::SimpleRect;
 use std::collections::HashMap;
 use mvengine::graphics::Drawable;
 use mvengine::ui::rendering::WideRenderContext;
+use api::registry::ObjectSource;
 use api::world::tiles::Orientation;
 use api::world::tiles::pos::TilePos;
 use crate::drawutils;
@@ -89,6 +90,18 @@ impl ClientWorld {
         };
 
         self.loaded.insert(packet.pos, chunk);
+    }
+
+    pub fn set_ghost_block(&mut self, pos: &TilePos, id: usize, orientation: Orientation) {
+        if let Some(chunk) = self.loaded.get_mut(&pos.chunk_pos) {
+            let index = Chunk::get_index(&pos);
+            if id == 0 {
+                chunk.tiles[index] = None;
+            } else {
+                let loaded = LoadedClientTile::new_ghost(id, orientation);
+                chunk.tiles[index] = Some(loaded);
+            }
+        }
     }
     
     pub fn drop_chunk(&mut self, pos: ChunkPos) {

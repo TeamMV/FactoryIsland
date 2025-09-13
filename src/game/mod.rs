@@ -1,5 +1,6 @@
 pub mod worldview;
 pub mod place_tile;
+pub mod persistent;
 
 use crate::gameloop::FactoryIslandClient;
 use crate::input;
@@ -43,26 +44,34 @@ use mvutils::unsafe_utils::Unsafe;
 use crate::game::worldview::WorldView;
 use crate::gamesettings::{GameSettings, SETTINGS_FILE};
 use api::player::profile::PlayerProfile;
+use crate::game::persistent::{PersistentGameData, PersistentLoadedData, PERSISTENT_FILE};
 use crate::ui::display::chat::Chat;
 use crate::ui::manager::{GameUiManager, UI_SETTINGS_SCREEN};
 use crate::ui::settings::SettingsScreen;
+
+pub const INTERNAL_IP: &str = "127.0.0.1:4040";
 
 pub struct Game {
     pub conf_dir: SmartDir,
     pub res_dir: SmartDir,
     pub settings: GameSettings,
     pub world_view: Option<WorldView>,
-    pub profile: PlayerProfile
+    pub profile: PlayerProfile,
+    pub is_internal: bool,
+    pub persistent_game_data: PersistentLoadedData
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(is_internal: bool) -> Self {
         let appdata = env::var("APPDATA").expect("Failed to get APPDATA environment variable");
         let mut full = PathBuf::from(appdata);
         full.push(input::PATH);
 
         let conf_dir = SmartDir::new(full);
         let res_dir = conf_dir.join("resources");
+        
+        let mut persistent_game_data = conf_dir.read_object::<PersistentGameData>(PERSISTENT_FILE)
+            .unwrap_or(PersistentGameData::new());
 
         let profile = PlayerProfile::load_or_create(&conf_dir);
 
@@ -72,6 +81,8 @@ impl Game {
             settings: GameSettings::new(),
             world_view: None,
             profile,
+            is_internal,
+            persistent_game_data: persistent_game_data.to_loaded(),
         }
     }
     
@@ -100,6 +111,10 @@ impl Game {
         let dir = self.configuration_directory();
         if let Some(_) = dir.save_object(&self.settings, SETTINGS_FILE) {
             debug!("Saved settings!");
+        }
+        let p_data = PersistentGameData::from_loaded(&self.persistent_game_data);
+        if let Some(_) = dir.save_object(&p_data, PERSISTENT_FILE) {
+            debug!("Saved persistent data!");
         }
     }
 

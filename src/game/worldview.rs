@@ -279,9 +279,11 @@ impl WorldView {
         //tile set
         if let Some(event) = &self.click_area.get().state().events.click_event {
             if event.button == MouseButton::Left && event.base.action == UiClickAction::Click {
+                let screen_pos = (window.input.mouse_x, window.input.mouse_y);
                 if let Some(tile) = self.tile_selection.selected_tile() {
-                    let pos = TilePos::from_screen((window.input.mouse_x, window.input.mouse_y), &self.player.camera.view_area, self.tile_size);
+                    let pos = TilePos::from_screen(screen_pos, &self.player.camera.view_area, self.tile_size);
                     if pos.distance_from(&self.player) <= self.player.reach {
+                        self.world.set_ghost_block(&pos, tile.id, self.orientation);
                         client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
                             pos,
                             tile_id: tile.id,
@@ -290,8 +292,9 @@ impl WorldView {
                         }));
                     }
                 } else {
-                    let pos = TilePos::from_screen((window.input.mouse_x, window.input.mouse_y), &self.player.camera.view_area, self.tile_size);
+                    let pos = TilePos::from_screen(screen_pos, &self.player.camera.view_area, self.tile_size);
                     if pos.distance_from(&self.player) <= self.player.reach {
+                        self.world.set_ghost_block(&pos, 0, self.orientation);
                         client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
                             pos,
                             tile_id: 0,

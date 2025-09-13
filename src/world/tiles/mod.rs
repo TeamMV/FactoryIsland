@@ -107,6 +107,20 @@ impl LoadedClientTile {
             }
         }
     }
+    
+    pub fn new_ghost(id: usize, orientation: Orientation) -> Self {
+        if let Some(template) = CLIENT_TILE_REG.create_object(id) {
+            Self {
+                id,
+                texture: template.base,
+                orientation,
+                drawer: template.drawer,
+                state: template.state,
+            }
+        } else {
+            Self::void()
+        }
+    }
 }
 
 impl TileDraw for LoadedClientTile {

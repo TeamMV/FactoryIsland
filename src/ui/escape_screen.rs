@@ -17,6 +17,7 @@ use mvengine::{expect_element_by_id, modify_style};
 use mvengine_proc::ui;
 use mvutils::thread::ThreadSafe;
 use std::any::Any;
+use std::process::exit;
 
 pub struct EscapeScreen {
     elem: ThreadSafe<Element>,
@@ -99,6 +100,16 @@ impl GameUiCallbacks for EscapeScreen {
                         client.disconnect(DisconnectReason::Disconnected);
                     }
                     game_handler.client = None;
+                    if game_handler.game.is_internal {
+                        //wait for the server to save and stutdown
+                        if let Some(sync) = &mut game_handler.server_sync {
+                            sync.stop();
+                            sync.lock();
+                            sync.wait();
+                        }
+                        //panic cleans the stack lmao exit() doesnt
+                        panic!("Intentional panic");
+                    }
                     if let Some(view) = &mut game_handler.game.world_view {
                         view.close(window);
                     }

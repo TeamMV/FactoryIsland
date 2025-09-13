@@ -1,15 +1,15 @@
 use crate::camera::Camera;
-use crate::game::Game;
+use crate::game::{Game, INTERNAL_IP};
 use crate::input::{InputManager, ESCAPE};
 use crate::player::ClientPlayer;
 use crate::rendering::WorldShaders;
 use crate::res::R;
 use crate::ui::manager;
 use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
-use crate::{debug, gamesettings, input, world};
+use crate::{gamesettings, input, world};
 use api::registry;
 use api::server::packets::common::{ClientDataPacket, ServerStatePacket};
-use api::server::{ClientBoundPacket, ServerBoundPacket};
+use api::server::{ClientBoundPacket, ServerBoundPacket, ServerSync};
 use log::{debug, error, info};
 use mvengine::color::RgbColor;
 use mvengine::input::Input;
@@ -50,19 +50,21 @@ pub struct GameHandler {
 
     server_packet: Option<ServerStatePacket>,
 
-    pub cloud_frame: f32
+    pub cloud_frame: f32,
+    pub server_sync: Option<ServerSync>
 }
 
 impl GameHandler {
-    pub fn new() -> Arc<RwLock<Self>> {
+    pub fn new(is_internal: bool, sync: Option<ServerSync>) -> Arc<RwLock<Self>> {
         let this = Self {
             this: CreateOnce::new(),
             client: None,
             ui_pipeline: CreateOnce::new(),
-            game: Game::new(),
+            game: Game::new(is_internal),
             ui_manager: CreateOnce::new(),
             server_packet: None,
             cloud_frame: 0.0,
+            server_sync: sync,
         };
 
         let arc = Arc::new(RwLock::new(this));
@@ -87,12 +89,21 @@ impl WindowCallbacks for GameHandler {
             self.ui_pipeline.create(|| ui_pipeline);
 
             InputManager::init(&self.game, &mut window.input);
-
-            self.game.initialize();
             
             let mut manager = GameUiManager::create_all(window, &self.game);
             manager.goto(manager::UI_MAIN_SCREEN, window);
             self.ui_manager.create(|| manager);
+
+            self.game.initialize();
+
+            if self.game.is_internal {
+                debug!("Connecting to internal server...");
+                let this = self.this.upgrade().expect("weak to self");
+                if let Some(c) = FactoryIslandClient::connect(INTERNAL_IP, this) {
+                    self.client = Some(c);
+                    self.ui_manager.close_all(window);
+                }
+            }
         }
     }
 
@@ -139,6 +150,11 @@ impl WindowCallbacks for GameHandler {
         }
         InputManager::close(&self.game, &mut window.input);
         self.game.exit();
+        if let Some(sync) = &mut self.server_sync {
+            sync.stop();
+            sync.lock();
+            sync.wait();
+        }
     }
 
     fn resize(&mut self, window: &mut Window, width: u32, height: u32) {

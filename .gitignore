@@ -1,3 +1,6 @@
 /Api/
+/Launcher/target
+/Launcher/.idea
+/Launcher/Cargo.lock
 /target/
 .idea/

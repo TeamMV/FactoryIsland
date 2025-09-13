@@ -5,7 +5,7 @@ use crate::ui::GameUiCallbacks;
 use mvengine::color::parse::parse_color;
 use mvengine::input::consts::MouseButton;
 use mvengine::net::client::Client;
-use mvengine::ui::attributes::UiState;
+use mvengine::ui::attributes::{ToRope, UiState};
 use mvengine::ui::context::UiResources;
 use mvengine::ui::elements::button::Button;
 use mvengine::ui::elements::div::Div;
@@ -26,6 +26,7 @@ use std::ops::Deref;
 use log::warn;
 use mvengine::ui::page::Page;
 use ropey::Rope;
+use crate::game::Game;
 use crate::ui::manager::{UI_SETTINGS_SCREEN, UI_STATUS_SCREEN};
 use crate::ui::status_screen::STATUS_MSG;
 use crate::uistyles;
@@ -34,11 +35,12 @@ pub struct Mainscreen {
     elem: ThreadSafe<Element>,
     connect_btn: ThreadSafe<Element>,
     settings_btn: ThreadSafe<Element>,
-    server_ip: UiState
+    server_ip: UiState,
+    pub last_ip: State<Rope>,
 }
 
 impl Mainscreen {
-    pub fn new(window: &Window) -> Self {
+    pub fn new(window: &Window, game: &Game) -> Self {
         let main_style = uistyles::BG.clone();
 
         let mut vert_style = UiStyle::stack_vertical();
@@ -48,12 +50,14 @@ impl Mainscreen {
 
         let mut hover_style = widget_style.clone();
         modify_style!(hover_style.background.color = UiValue::Just(parse_color("#3f48cc").unwrap()));
+        
+        let last_ip = game.persistent_game_data.last_ip.clone();
 
         let elem = ui! {
             <Ui context={window.ui().context()}>
                 <Div id="mainscreen" style={main_style}>
                     <Div style={vert_style}>
-                        <TextBox style={uistyles::EDIT_PRESET.clone()} id="ip_input" placeholder="SeverIP" content="127.0.0.1:4040"/>
+                        <TextBox style={uistyles::EDIT_PRESET.clone()} id="ip_input" placeholder="SeverIP" content={last_ip.clone()}/>
                         <Button style={widget_style.clone()} id="connect">Connect</Button>
                         <Button style={widget_style.clone()} id="settings">Settings</Button>
                     </Div>
@@ -82,6 +86,7 @@ impl Mainscreen {
             connect_btn: ThreadSafe::new(connect_btn),
             settings_btn: ThreadSafe::new(settings_btn),
             server_ip: content,
+            last_ip,
         }
     }
 }
