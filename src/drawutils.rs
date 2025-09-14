@@ -1,26 +1,33 @@
 use crate::drawutils;
 use crate::res::R;
+use crate::world::tiles::ClientDrawable;
 use api::world::tiles::pos::TilePos;
+use api::world::tiles::Orientation;
 use api::world::{resolve_unit, PixelUnit, TileUnit};
+use mvengine::color::RgbColor;
+use mvengine::graphics::Drawable;
+use mvengine::rendering::texture::Texture;
 use mvengine::rendering::{InputVertex, Quad, RenderContext, Transform};
+use mvengine::ui;
 use mvengine::ui::geometry::shape::{shapes, VertexStream};
 use mvengine::ui::geometry::{Rect, SimpleRect};
 use mvengine::ui::rendering::adaptive::AdaptiveFill;
 use mvengine::ui::rendering::WideRenderContext;
 use std::ops::Deref;
-use mvengine::color::RgbColor;
-use mvengine::graphics::Drawable;
-use mvengine::rendering::texture::Texture;
-use mvengine::ui;
-use api::world::tiles::Orientation;
-use crate::world::tiles::ClientDrawable;
 
 pub enum Fill {
     Color(RgbColor),
     Drawable(Drawable, Orientation),
 }
 
-pub fn tile_rect(ctx: &mut impl RenderContext, uv: [(f32, f32); 4], tile_rect: &SimpleRect, view_area: &SimpleRect, tex: &Texture, y: i32) {
+pub fn tile_rect(
+    ctx: &mut impl RenderContext,
+    uv: [(f32, f32); 4],
+    tile_rect: &SimpleRect,
+    view_area: &SimpleRect,
+    tex: &Texture,
+    y: i32,
+) {
     let controller = ctx.controller();
 
     let x1 = tile_rect.x as f32 - view_area.x as f32;
@@ -64,7 +71,7 @@ pub fn tile_rect(ctx: &mut impl RenderContext, uv: [(f32, f32); 4], tile_rect: &
                 uv: uv[3],
                 texture: tex.id,
                 has_texture: 1.0,
-            }
+            },
         ],
     });
 }
@@ -99,30 +106,77 @@ pub fn rect(ctx: &mut impl WideRenderContext, x: i32, y: i32, w: i32, h: i32, fi
     };
 }
 
-pub fn draw_in_world(ctx: &mut impl WideRenderContext, view_area: &SimpleRect, pos: TileUnit, size: TileUnit, fill: Fill, tile_size: i32, y: f32) {
+pub fn draw_in_world(
+    ctx: &mut impl WideRenderContext,
+    view_area: &SimpleRect,
+    pos: TileUnit,
+    size: TileUnit,
+    fill: Fill,
+    tile_size: i32,
+    y: f32,
+) {
     let pos_px = resolve_unit(pos, tile_size);
     let size_px = resolve_unit(size, tile_size);
     let rect = SimpleRect::new(pos_px.0, pos_px.1, size_px.0, size_px.1);
     if view_area.intersects(&rect) {
-        drawutils::rect(ctx, rect.x - view_area.x, rect.y - view_area.y, rect.width, rect.height, fill, y);
+        drawutils::rect(
+            ctx,
+            rect.x - view_area.x,
+            rect.y - view_area.y,
+            rect.width,
+            rect.height,
+            fill,
+            y,
+        );
     }
 }
 
-pub fn draw_in_world_tile(ctx: &mut impl WideRenderContext, view_area: &SimpleRect, pos: TilePos, fill: Fill, tile_size: i32, y: f32) {
+pub fn draw_in_world_tile(
+    ctx: &mut impl WideRenderContext,
+    view_area: &SimpleRect,
+    pos: TilePos,
+    fill: Fill,
+    tile_size: i32,
+    y: f32,
+) {
     let x = pos.raw.0 * tile_size;
     let z = pos.raw.1 * tile_size;
     let rect = SimpleRect::new(x, z, tile_size, tile_size);
     if view_area.intersects(&rect) {
-        drawutils::rect(ctx, rect.x - view_area.x, rect.y - view_area.y, rect.width, rect.height, fill, y);
+        drawutils::rect(
+            ctx,
+            rect.x - view_area.x,
+            rect.y - view_area.y,
+            rect.width,
+            rect.height,
+            fill,
+            y,
+        );
     }
 }
 
-pub fn draw_in_world_size(ctx: &mut impl WideRenderContext, view_area: &SimpleRect, pos: TileUnit, size: PixelUnit, fill: Fill, tile_size: i32, y: f32) {
+pub fn draw_in_world_size(
+    ctx: &mut impl WideRenderContext,
+    view_area: &SimpleRect,
+    pos: TileUnit,
+    size: PixelUnit,
+    fill: Fill,
+    tile_size: i32,
+    y: f32,
+) {
     let pos_px = resolve_unit(pos, tile_size);
     let size_px = size;
     let rect = SimpleRect::new(pos_px.0, pos_px.1, size_px.0, size_px.1);
     if view_area.intersects(&rect) {
-        drawutils::rect(ctx, rect.x - view_area.x, rect.y - view_area.y, rect.width, rect.height, fill, y);
+        drawutils::rect(
+            ctx,
+            rect.x - view_area.x,
+            rect.y - view_area.y,
+            rect.width,
+            rect.height,
+            fill,
+            y,
+        );
     }
 }
 

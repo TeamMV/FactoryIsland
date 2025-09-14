@@ -1,27 +1,24 @@
 pub mod chat;
+pub mod inventory;
 
-use log::debug;
-use mvengine::color::RgbColor;
-use mvengine::ui::styles::{UiStyle, UiValue, EMPTY_STYLE};
-use mvengine::ui::elements::button::Button;
-use mvengine::ui::elements::child::{Child, ToChildFromIterator};
-use mvengine::{expect_element_by_id, modify_style};
-use mvengine_proc::style_expr;
+use crate::world::tiles::impls::CLIENT_TILE_REG;
 use api::server::packets::common::TileKind;
+use mvengine::color::RgbColor;
 use mvengine::graphics::Drawable;
 use mvengine::input::consts::MouseButton;
-use mvengine::ui::elements::child::ToChild;
-use mvengine::ui::elements::div::Div;
+use mvengine::ui::elements::button::Button;
+use mvengine::ui::elements::child::ToChildFromIterator;
 use mvengine::ui::elements::events::UiClickAction;
-use mvengine::ui::elements::UiElementStub;
+use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
 use mvengine::ui::styles::enums::BackgroundRes;
+use mvengine::ui::styles::{UiStyle, UiValue, EMPTY_STYLE};
 use mvengine::window::Window;
+use mvengine::{expect_element_by_id, modify_style};
+use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::lazy;
 use mvutils::thread::ThreadSafe;
-use api::registry::ObjectSource;
-use crate::world::tiles::impls::CLIENT_TILE_REG;
 
 lazy! {
     static SELECT_STYLE: UiStyle = {
@@ -43,12 +40,14 @@ pub struct TileSelection {
     selected_index: Option<usize>,
     tiles: Vec<TileKind>,
     root: ThreadSafe<Element>,
-    buttons: Vec<ThreadSafe<Element>>
+    buttons: Vec<ThreadSafe<Element>>,
 }
 
 impl TileSelection {
-    pub fn new(window: &Window, mut available_tiles: impl Iterator<Item=TileKind>) -> Self {
-        let tiles = available_tiles.filter(|tile| tile.id != 0).collect::<Vec<_>>();
+    pub fn new(window: &Window, mut available_tiles: impl Iterator<Item = TileKind>) -> Self {
+        let tiles = available_tiles
+            .filter(|tile| *tile != 0)
+            .collect::<Vec<_>>();
         let mut available_tiles = tiles.clone().into_iter();
         let outer = ui! {
             <Ui context={window.ui().context()}>
@@ -58,7 +57,7 @@ impl TileSelection {
             </Ui>
         };
 
-        let container = expect_element_by_id!(outer, "button_container");
+        let mut container = expect_element_by_id!(outer, "button_container");
 
         let mut buttons = vec![];
         while let Ok((bns, r)) = Self::create_row(window, &mut available_tiles) {
@@ -76,16 +75,19 @@ impl TileSelection {
         }
     }
 
-    fn create_row(window: &Window, available_tiles: &mut impl Iterator<Item=TileKind>) -> Result<(Vec<Element>, Element), ()> {
+    fn create_row(
+        window: &Window,
+        available_tiles: &mut impl Iterator<Item = TileKind>,
+    ) -> Result<(Vec<Element>, Element), ()> {
         let buttons = match available_tiles.next_chunk::<5>() {
-            Ok(chunk) => {
-                chunk.map(|tile| Self::create_button(window, tile)).to_vec()
-            }
+            Ok(chunk) => chunk.map(|tile| Self::create_button(window, tile)).to_vec(),
             Err(part_chunk) => {
                 if part_chunk.is_empty() {
                     return Err(());
                 } else {
-                    part_chunk.map(|tile| Self::create_button(window, tile)).collect::<Vec<_>>()
+                    part_chunk
+                        .map(|tile| Self::create_button(window, tile))
+                        .collect::<Vec<_>>()
                 }
             }
         };
@@ -111,20 +113,22 @@ impl TileSelection {
         };
         elem
     }
-    
-    pub fn open(&self, window: &mut Window, parent: Element) {
-        parent.get_mut().add_child(self.root.as_ref().clone().to_child());
+
+    pub fn open(&self, window: &mut Window, mut parent: Element) {
+        parent
+            .get_mut()
+            .add_child(self.root.as_ref().clone().to_child());
     }
-    
-    pub fn close(&self, window: &mut Window) {
-        if let Some(parent) = &self.root.as_ref().get().state().parent {
+
+    pub fn close(&mut self, window: &mut Window) {
+        if let Some(parent) = &mut self.root.as_mut().get_mut().state_mut().parent {
             let parent = parent.get_mut();
             parent.remove_child_by_id("tile_selection");
         }
 
         window.ui_mut().remove_root(self.root.as_ref().clone());
     }
-    
+
     pub fn check_events(&mut self) {
         for (i, button) in self.buttons.iter().enumerate() {
             let elem = button.as_ref().get_mut();
@@ -133,7 +137,11 @@ impl TileSelection {
                     if let MouseButton::Left = event.button {
                         if let Some(prev) = self.selected_index {
                             let prev_btn = &self.buttons[prev];
-                            prev_btn.as_ref().get_mut().style_mut().merge_at_set_of(&NO_SELECT_STYLE);
+                            prev_btn
+                                .as_ref()
+                                .get_mut()
+                                .style_mut()
+                                .merge_at_set_of(&NO_SELECT_STYLE);
                             if prev == i {
                                 self.selected_index = None;
                                 return;
@@ -157,17 +165,13 @@ impl TileSelection {
 }
 
 fn get_drawable(kind: &TileKind) -> Drawable {
-    if let ObjectSource::Mod(m) = &kind.source {
-        Drawable::missing() //first get the rest to compile again
-    } else {
-        if kind.id >= 1 {
-            if let Some(template) = CLIENT_TILE_REG.create_object(kind.id - 1) {
-                template.base
-            } else {
-                Drawable::missing()
-            }
+    if *kind >= 1 {
+        if let Some(template) = CLIENT_TILE_REG.create_object((*kind - 1) as usize) {
+            template.base
         } else {
             Drawable::missing()
         }
+    } else {
+        Drawable::missing()
     }
 }

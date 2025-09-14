@@ -5,14 +5,13 @@ use mvengine::ui::context::UiResources;
 r! {
     <resources structName="R" cdir="../res/">
         <colors>
-            <color name="inv_bg" val="white"/>
-            <color name="inv_bg_border" val="black"/>
-            <color name="inv_slot" val="white"/>
-            <color name="inv_slot_select" val="red"/>
-            <color name="inv_slot_border" val="black"/>
-
             <color name="ui_bg" val="#363636AA"/>
+            <color name="ui_bg_hover" val="#575757AA"/>
             <color name="ui_highlight" val="#EDD605FF"/>
+
+            <color name="inv_bg" val="#00000044"/>
+            <color name="inv_slot_hover" val="#44444444"/>
+            <color name="inv_slot_bg" val="#00000044"/>
         </colors>
         <dimensions>
             <dimension name="ui_widget_width" val="10cm"/>

@@ -1,28 +1,22 @@
-use std::ops::Deref;
-use std::sync::Arc;
-use mvengine::ui::elements::child::ToChildFromIterator;
-use mvengine::ui::elements::text::Text;
-use mvengine::ui::elements::child::ToChild;
-use mvengine::ui::elements::button::Button;
-use mvengine::ui::elements::div::Div;
-use mvengine::ui::elements::textbox::TextBox;
-use mvengine::ui::elements::Element;
-use mvengine::ui::elements::UiElementStub;
-use mvengine::ui::elements::UiElement;
-use mvengine::window::Window;
-use mvengine::{expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
+use crate::gameloop::FactoryIslandClient;
+use api::server::packets::player::{OtherPlayerChatPacket, PlayerChatPacket};
+use api::server::ServerBoundPacket;
 use mvengine::net::server::ClientEndpoint;
 use mvengine::ui::context::UiContext;
+use mvengine::ui::elements::prelude::*;
+use mvengine::ui::elements::Element;
+use mvengine::ui::elements::UiElement;
 use mvengine::utils::RopeFns;
+use mvengine::window::Window;
+use mvengine::{expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
 use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
 use ropey::Rope;
-use api::server::packets::player::{OtherPlayerChatPacket, PlayerChatPacket};
-use api::server::ServerBoundPacket;
-use crate::gameloop::FactoryIslandClient;
+use std::ops::Deref;
+use std::sync::Arc;
 
 pub struct Chat {
     pub open: bool,
@@ -43,7 +37,7 @@ impl Chat {
                 </Div>
             </Ui>
         };
-        
+
         let scroll_elem = ui! {
             <Ui context={window.ui().context()}>
                 <Div id="chat_scroll_div" style="position: absolute; x: 0.5cm; y: 3cm; width: 15cm; margin: none; padding: none; background.color: #00000044; border.resource: none; direction: vertical">
@@ -51,7 +45,7 @@ impl Chat {
                 </Div>
             </Ui>
         };
-        
+
         window.ui_mut().add_root(scroll_elem.clone());
 
         Self {
@@ -86,10 +80,8 @@ impl Chat {
 
             let message = self.chat_state.read();
             let message = message.to_string();
-            
-            client.send(ServerBoundPacket::PlayerChat(PlayerChatPacket {
-                message,
-            }));
+
+            client.send(ServerBoundPacket::PlayerChat(PlayerChatPacket { message }));
         }
     }
 
@@ -97,26 +89,26 @@ impl Chat {
         let name = format!("<{}> ", packet.player.data.profile.name);
         self.create_message_element(name, packet.message);
     }
-    
-    fn create_message_element(&self, name: String, message: String) {
+
+    fn create_message_element(&mut self, name: String, message: String) {
         let name_button = ui! {
             <Ui context={self.context.as_ref().clone()}>
                 <Button style="background.resource: none; border.resource: none; text.color: white; height: 1cm; margin: none; padding: none; text.align_y: start;">{name}</Button>
             </Ui>
         };
-        
+
         let message_text = ui! {
             <Ui context={self.context.as_ref().clone()}>
-                <Text style="background.resource: none; border.resource: none; text.color: white; width: 10cm; margin: none; margin.top: 3mm; margin.bottom: 3mm; padding: none;">{message}</Text>
+                <Button style="background.resource: none; border.resource: none; text.color: white; width: 10cm; margin: none; margin.top: 3mm; margin.bottom: 3mm; padding: none;">{message}</Button>
             </Ui>
         };
-        
+
         let div = ui! {
             <Ui context={self.context.as_ref().clone()}>
                 <Div style="background.resource: none; border.resource: none; margin: none; padding: none;">{[name_button, message_text].into_iter()}</Div>
             </Ui>
         };
-        
+
         self.scroll_div.get_mut().add_child(div.to_child());
     }
 }

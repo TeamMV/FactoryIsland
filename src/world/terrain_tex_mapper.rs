@@ -1,5 +1,5 @@
-use mvengine::graphics::Drawable;
 use crate::res::R;
+use mvengine::graphics::Drawable;
 
 pub fn get_terrain_drawable(id: usize) -> Drawable {
     match id {
@@ -7,6 +7,6 @@ pub fn get_terrain_drawable(id: usize) -> Drawable {
         2 => Drawable::Texture(R.texture.terrain_sand),
         3 => Drawable::Texture(R.texture.terrain_grass),
         4 => Drawable::Texture(R.texture.terrain_stone),
-        _ => Drawable::Texture(R.mv.texture.missing)
+        _ => Drawable::Texture(R.mv.texture.missing),
     }
 }

@@ -1,9 +1,10 @@
-use bytebuffer::ByteBuffer;
-use mvengine::graphics::Drawable;
-use mvutils::{lazy, Savable};
-use mvutils::save::Savable;
 use crate::res::R;
 use crate::world::tiles::impls::ClientStateTile;
+use bytebuffer::ByteBuffer;
+use mvengine::graphics::Drawable;
+use mvutils::save::Savable;
+use mvutils::{lazy, Savable};
+use api::ingredients::IngredientStack;
 
 lazy! {
     pub static BASE: Drawable = Drawable::TileSet(R.tileset.conveyor, R.tile.conveyor.base);
@@ -11,25 +12,21 @@ lazy! {
 
 #[derive(Savable, Clone)]
 pub struct ClientConveyorTile {
-    ingredients: Vec<usize>
+    ingredients: [Option<IngredientStack>; 3],
 }
 
 impl ClientConveyorTile {
     pub fn new() -> Self {
         Self {
-            ingredients: vec![],
+            ingredients: [None, None, None],
         }
     }
 }
 
 impl ClientStateTile for ClientConveyorTile {
     fn load_from_server(&mut self, loader: &mut ByteBuffer) -> Result<(), String> {
-        self.ingredients = Vec::load(loader)?;
+        *self = Self::load(loader)?;
         Ok(())
-    }
-
-    fn save_to_server(&self, saver: &mut ByteBuffer) {
-        self.ingredients.save(saver);
     }
 
     fn get_drawable(&self) -> Drawable {

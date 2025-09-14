@@ -5,11 +5,9 @@ use crate::uistyles;
 use mvengine::color::RgbColor;
 use mvengine::input::consts::MouseButton;
 use mvengine::net::DisconnectReason;
-use mvengine::ui::elements::button::Button;
-use mvengine::ui::elements::div::Div;
 use mvengine::ui::elements::events::UiClickAction;
+use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
-use mvengine::ui::elements::UiElementStub;
 use mvengine::ui::page::Page;
 use mvengine::ui::styles::{UiStyle, UiValue};
 use mvengine::window::Window;
@@ -18,6 +16,9 @@ use mvengine_proc::ui;
 use mvutils::thread::ThreadSafe;
 use std::any::Any;
 use std::process::exit;
+use api::inventory::InventoryOwner;
+use api::server::packets::inventory::InventoryOpenPacket;
+use api::server::ServerBoundPacket;
 
 pub struct EscapeScreen {
     elem: ThreadSafe<Element>,
@@ -39,7 +40,6 @@ impl EscapeScreen {
         let mut hover_style = widget_style.clone();
         modify_style!(hover_style.background.color = UiValue::Just(RgbColor::red()));
 
-
         let elem = ui! {
             <Ui context={window.ui().context()}>
                 <Div id="escape" style={main_style}>
@@ -51,7 +51,7 @@ impl EscapeScreen {
                 </Div>
             </Ui>
         };
-        
+
         let quit_btn = expect_element_by_id!(elem, "quit");
         let back_btn = expect_element_by_id!(elem, "back");
         let settings_btn = expect_element_by_id!(elem, "settings");
@@ -76,46 +76,41 @@ impl GameUiCallbacks for EscapeScreen {
         "escape"
     }
 
-    fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
-        if let Some(event) = &self.back_btn.as_ref().get().state().events.click_event {
-            if let MouseButton::Left = event.button {
-                if let UiClickAction::Click = event.base.action {
-                    game_handler.ui_manager.close_all(window);
-                }
+    fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {        
+        if self.back_btn.was_left_clicked() {
+           game_handler.ui_manager.close_all(window); 
+        };
+
+        if self.settings_btn.was_left_clicked() {
+            //game_handler.ui_manager.goto(UI_SETTINGS_SCREEN, window);
+            if let Some(client) = &mut game_handler.client {
+                client.send(ServerBoundPacket::InventoryOpenPacket(
+                    InventoryOpenPacket {
+                        owner: InventoryOwner::Player,
+                    },
+                ));
             }
         }
-
-        if let Some(event) = &self.settings_btn.as_ref().get().state().events.click_event {
-            if let MouseButton::Left = event.button {
-                if let UiClickAction::Click = event.base.action {
-                    game_handler.ui_manager.goto(UI_SETTINGS_SCREEN, window);
-                }
+        
+        if self.quit_btn.was_left_clicked() {
+            if let Some(client) = &mut game_handler.client {
+                client.disconnect(DisconnectReason::Disconnected);
             }
-        }
-
-        if let Some(event) = &self.quit_btn.as_ref().get().state().events.click_event {
-            if let MouseButton::Left = event.button {
-                if let UiClickAction::Click = event.base.action {
-                    if let Some(client) = &mut game_handler.client { 
-                        client.disconnect(DisconnectReason::Disconnected);
-                    }
-                    game_handler.client = None;
-                    if game_handler.game.is_internal {
-                        //wait for the server to save and stutdown
-                        if let Some(sync) = &mut game_handler.server_sync {
-                            sync.stop();
-                            sync.lock();
-                            sync.wait();
-                        }
-                        //panic cleans the stack lmao exit() doesnt
-                        panic!("Intentional panic");
-                    }
-                    if let Some(view) = &mut game_handler.game.world_view {
-                        view.close(window);
-                    }
-                    game_handler.ui_manager.goto(UI_MAIN_SCREEN ,window);
+            game_handler.client = None;
+            if game_handler.game.is_internal {
+                //wait for the server to save and stutdown
+                if let Some(sync) = &mut game_handler.server_sync {
+                    sync.stop();
+                    sync.lock();
+                    sync.wait();
                 }
+                //panic cleans the stack lmao exit() doesnt
+                panic!("Intentional panic");
             }
+            if let Some(view) = &mut game_handler.game.world_view {
+                view.close(window);
+            }
+            game_handler.ui_manager.goto(UI_MAIN_SCREEN, window);
         }
     }
 

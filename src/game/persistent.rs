@@ -1,13 +1,13 @@
-use mvengine::ui::attributes::ToRope;
-use mvutils::Savable;
+use mvengine::ui::utils::ToRope;
 use mvutils::state::State;
+use mvutils::Savable;
 use ropey::Rope;
 
 pub const PERSISTENT_FILE: &str = "persistent.sav";
 
 #[derive(Clone, Savable)]
 pub struct PersistentGameData {
-    pub last_ip: String
+    pub last_ip: String,
 }
 
 impl PersistentGameData {
@@ -31,5 +31,5 @@ impl PersistentGameData {
 }
 
 pub struct PersistentLoadedData {
-    pub last_ip: State<Rope>
+    pub last_ip: State<Rope>,
 }

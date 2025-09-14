@@ -1,22 +1,22 @@
-pub mod manager;
-pub mod mainscreen;
-pub mod escape_screen;
 pub mod display;
+pub mod escape_screen;
+pub mod mainscreen;
+pub mod manager;
 pub mod settings;
 pub mod status_screen;
 
-use std::any::Any;
+use crate::gameloop::GameHandler;
 use log::{debug, error};
 use mvengine::rendering::RenderContext;
 use mvengine::ui::elements::{Element, UiElementCallbacks, UiElementStub};
 use mvengine::ui::page::Page;
 use mvengine::window::Window;
 use mvutils::thread::ThreadSafe;
-use crate::gameloop::GameHandler;
+use std::any::Any;
 
 pub struct GameUi {
     pub callbacks: Box<dyn GameUiCallbacks>,
-    element: ThreadSafe<Element>
+    element: ThreadSafe<Element>,
 }
 
 impl GameUi {
@@ -33,12 +33,12 @@ impl GameUi {
             })
         }
     }
-    
+
     pub fn open(&self, window: &mut Window) {
         let name = self.callbacks.get_name();
         window.ui_mut().page_manager_mut().open(name);
     }
-    
+
     pub fn check_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
         self.callbacks.check_ui_events(window, game_handler);
     }

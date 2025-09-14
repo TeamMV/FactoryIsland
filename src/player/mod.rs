@@ -1,21 +1,21 @@
-use log::debug;
 use crate::camera::Camera;
 use crate::drawutils;
+use crate::drawutils::Fill;
 use crate::gameloop::FactoryIslandClient;
 use crate::res::R;
+use api::player::profile::PlayerProfile;
 use api::server::packets::common::ClientDataPacket;
 use api::server::packets::player::{PlayerDataPacket, PlayerMovePacket};
 use api::server::ServerBoundPacket;
+use api::world::tiles::pos::{TileDistance, TilePos};
+use api::world::tiles::Orientation;
 use api::world::{resolve_unit, SingleTileUnit, TileUnit};
+use log::debug;
 use mvengine::graphics::Drawable;
 use mvengine::math::vec::Vec2;
 use mvengine::rendering::RenderContext;
 use mvengine::ui::geometry::{geom, SimpleRect};
 use mvengine::ui::rendering::WideRenderContext;
-use api::player::profile::PlayerProfile;
-use api::world::tiles::Orientation;
-use api::world::tiles::pos::{TileDistance, TilePos};
-use crate::drawutils::Fill;
 
 pub const PADDING_FACTOR: i32 = 4;
 
@@ -62,7 +62,10 @@ impl ClientPlayer {
     }
 
     fn update_cam(&mut self, tile_size: i32) {
-        let (padding_x, padding_y) = (self.camera.view_area.width / PADDING_FACTOR, self.camera.view_area.height / PADDING_FACTOR);
+        let (padding_x, padding_y) = (
+            self.camera.view_area.width / PADDING_FACTOR,
+            self.camera.view_area.height / PADDING_FACTOR,
+        );
         let (mut player_x, mut player_y) = resolve_unit(self.pos, tile_size);
         player_x -= self.camera.pos.0;
         player_y -= self.camera.pos.1;
@@ -99,10 +102,23 @@ impl ClientPlayer {
     pub fn draw(&self, ctx: &mut impl WideRenderContext, tile_size: i32) {
         let fill = Fill::Drawable(Drawable::Texture(R.texture.player), Orientation::North);
         let z = ctx.next_z();
-        drawutils::draw_in_world(ctx, &self.camera.view_area, self.pos, (1.0, 1.0), fill, tile_size, z);
+        drawutils::draw_in_world(
+            ctx,
+            &self.camera.view_area,
+            self.pos,
+            (1.0, 1.0),
+            fill,
+            tile_size,
+            z,
+        );
     }
 
-    pub fn draw_from_other_pov(&self, ctx: &mut impl WideRenderContext, view_area: &SimpleRect, tile_size: i32) {
+    pub fn draw_from_other_pov(
+        &self,
+        ctx: &mut impl WideRenderContext,
+        view_area: &SimpleRect,
+        tile_size: i32,
+    ) {
         let fill = Fill::Drawable(Drawable::Texture(R.texture.player), Orientation::North);
         let z = ctx.next_z();
         drawutils::draw_in_world(ctx, view_area, self.pos, (1.0, 1.0), fill, tile_size, z);

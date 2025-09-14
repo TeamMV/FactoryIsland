@@ -1,12 +1,19 @@
-pub mod worldview;
-pub mod place_tile;
 pub mod persistent;
+pub mod place_tile;
+pub mod worldview;
 
+use crate::game::persistent::{PersistentGameData, PersistentLoadedData, PERSISTENT_FILE};
+use crate::game::worldview::WorldView;
 use crate::gameloop::FactoryIslandClient;
+use crate::gamesettings::{GameSettings, SETTINGS_FILE};
 use crate::input;
 use crate::player::ClientPlayer;
+use crate::ui::display::chat::Chat;
 use crate::ui::display::TileSelection;
+use crate::ui::manager::{GameUiManager, UI_SETTINGS_SCREEN};
+use crate::ui::settings::SettingsScreen;
 use crate::world::ClientWorld;
+use api::player::profile::PlayerProfile;
 use api::registry::Registry;
 use api::server::packets::common::{ClientDataPacket, ServerStatePacket, TileKind};
 use api::server::packets::world::TileSetFromClientPacket;
@@ -16,14 +23,17 @@ use api::world::tiles::terrain::TerrainTile;
 use api::world::tiles::Orientation;
 use bytebuffer::{ByteBuffer, Endian};
 use log::{debug, error, warn};
+use mvengine::game::fs::smartdir::SmartDir;
 use mvengine::input::consts::MouseButton;
 use mvengine::input::Input;
 use mvengine::modify_style;
 use mvengine::net::server::ClientId;
 use mvengine::rendering::RenderContext;
 use mvengine::ui::elements::div::Div;
+use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::Element;
 use mvengine::ui::elements::UiElementStub;
+use mvengine::ui::rendering::WideRenderContext;
 use mvengine::window::Window;
 use mvengine_proc::style_expr;
 use mvengine_proc::ui;
@@ -32,22 +42,12 @@ use mvutils::hashers::U64IdentityHasher;
 use mvutils::once::CreateOnce;
 use mvutils::save::Savable;
 use mvutils::thread::ThreadSafe;
+use mvutils::unsafe_utils::Unsafe;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use mvengine::game::fs::smartdir::SmartDir;
-use mvengine::ui::elements::events::UiClickAction;
-use mvengine::ui::rendering::WideRenderContext;
-use mvutils::unsafe_utils::Unsafe;
-use crate::game::worldview::WorldView;
-use crate::gamesettings::{GameSettings, SETTINGS_FILE};
-use api::player::profile::PlayerProfile;
-use crate::game::persistent::{PersistentGameData, PersistentLoadedData, PERSISTENT_FILE};
-use crate::ui::display::chat::Chat;
-use crate::ui::manager::{GameUiManager, UI_SETTINGS_SCREEN};
-use crate::ui::settings::SettingsScreen;
 
 pub const INTERNAL_IP: &str = "127.0.0.1:4040";
 
@@ -58,7 +58,7 @@ pub struct Game {
     pub world_view: Option<WorldView>,
     pub profile: PlayerProfile,
     pub is_internal: bool,
-    pub persistent_game_data: PersistentLoadedData
+    pub persistent_game_data: PersistentLoadedData,
 }
 
 impl Game {
@@ -69,8 +69,9 @@ impl Game {
 
         let conf_dir = SmartDir::new(full);
         let res_dir = conf_dir.join("resources");
-        
-        let mut persistent_game_data = conf_dir.read_object::<PersistentGameData>(PERSISTENT_FILE)
+
+        let mut persistent_game_data = conf_dir
+            .read_object::<PersistentGameData>(PERSISTENT_FILE)
             .unwrap_or(PersistentGameData::new());
 
         let profile = PlayerProfile::load_or_create(&conf_dir);
@@ -85,8 +86,13 @@ impl Game {
             persistent_game_data: persistent_game_data.to_loaded(),
         }
     }
-    
-    pub fn on_frame(&mut self, window: &mut Window, client: &mut Option<FactoryIslandClient>, ui_manager: &mut GameUiManager) {
+
+    pub fn on_frame(
+        &mut self,
+        window: &mut Window,
+        client: &mut Option<FactoryIslandClient>,
+        ui_manager: &mut GameUiManager,
+    ) {
         if let Some(view) = &mut self.world_view {
             if let Some(client) = client {
                 view.on_frame(window, client, ui_manager);
@@ -99,7 +105,7 @@ impl Game {
             view.resize(window);
         }
     }
-    
+
     pub fn on_server_state(&mut self, window: &mut Window, packet: ServerStatePacket) {
         self.world_view = Some(WorldView::new(window, packet, self));
         if let Some(view) = &mut self.world_view {

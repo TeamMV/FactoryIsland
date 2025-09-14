@@ -21,7 +21,7 @@ pub struct SettingsScreen {
 
     pub enable_clouds: State<bool>,
     pub enable_ssao: State<bool>,
-    pub indicator_circle: State<bool>
+    pub indicator_circle: State<bool>,
 }
 
 impl SettingsScreen {
@@ -31,7 +31,9 @@ impl SettingsScreen {
         let checkbox_style = uistyles::CHECKBOX_PRESET.clone();
         let slider_style = uistyles::SLIDER_PRESET.clone();
         let mut clear_style = uistyles::CLEAR.clone();
-        clear_style.merge_at_set_of(&style_expr_empty!("width: auto; height: auto; direction: horizontal;"));
+        clear_style.merge_at_set_of(&style_expr_empty!(
+            "width: auto; height: auto; direction: horizontal;"
+        ));
 
         let enable_clouds = game.settings.cloud_shader.clone();
         let enable_ssao = game.settings.ssao_shader.clone();
@@ -51,7 +53,7 @@ impl SettingsScreen {
                                 <Slider style={slider_style} range="1..10@1"/>
                             </Div>
                             <Button style={widget.clone()} id="back_btn">Back</Button>
-                        </Div>            
+                        </Div>
                     </Div>
                 </Div>
             </Ui>
@@ -81,12 +83,8 @@ impl GameUiCallbacks for SettingsScreen {
     }
 
     fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
-        if let Some(event) = &self.back_btn.as_ref().get().state().events.click_event {
-            if let MouseButton::Left = event.button {
-                if let UiClickAction::Click = event.base.action {
-                    game_handler.ui_manager.go_back(window);
-                }
-            }
+        if self.back_btn.was_left_clicked() {
+            game_handler.ui_manager.go_back(window);
         }
     }
 

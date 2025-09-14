@@ -1,9 +1,9 @@
-use mvengine::ui::context::UiResources;
-use mvengine::graphics::Drawable;
-use mvengine_proc::resolve_resource;
 use crate::res::R;
+use mvengine::graphics::Drawable;
 use mvengine::modify_style;
+use mvengine::ui::context::UiResources;
 use mvengine::ui::styles::UiStyle;
+use mvengine_proc::resolve_resource;
 use mvengine_proc::{multiline_str_into, style_expr, style_expr_empty};
 use mvutils::lazy;
 
@@ -30,6 +30,8 @@ lazy! {
             padding: 2.5cm;
             overflow_x: never;
             overflow_y: never;
+            child_align_x: middle;
+            child_align_y: middle;
         });
         let mut base = CLEAR.clone();
         base.merge_at_set_of(&m);
@@ -57,6 +59,7 @@ lazy! {
 
     pub static PRESET: UiStyle = multiline_str_into!(style_expr,{
         background.color: @R.color/ui_bg;
+        hover.background.color: @R.color/ui_bg_hover;
         detail.color: @R.color/ui_highlight;
         detail.shape: @R.geometry/tick;
         text.color: @R.color/ui_highlight;
@@ -111,5 +114,45 @@ lazy! {
     pub static CLEAR: UiStyle = multiline_str_into!(style_expr_empty,{
         background.resource: none;
         border.resource: none;
+    });
+
+    pub static SLOT_OUTER_STYLE: UiStyle = multiline_str_into!(style_expr,{
+        background.resource: color;
+        hover.background.color: @R.color/inv_slot_hover;
+        border.resource: none;
+        width: 1.5cm;
+        height: 1.5cm;
+        padding: 2mm;
+        margin: 1.5mm;
+        overflow_x: never;
+        overflow_y: never;
+    });
+
+    pub static SLOT_INNER_STYLE: UiStyle = multiline_str_into!(style_expr,{
+        background.resource: texture;
+        border.resource: none;
+        width: 100%;
+        height: 100%;
+        padding: none;
+        margin: none;
+        overflow_x: never;
+        overflow_y: never;
+    });
+
+    pub static INVENTORY_WRAPPER_STYLE: UiStyle = multiline_str_into!(style_expr,{
+        background.resource: none;
+        border.resource: none;
+        direction: vertical;
+        child_align_x: middle;
+    });
+
+    pub static INVENTORY_STYLE: UiStyle = multiline_str_into!(style_expr,{
+        background.resource: color;
+        background.color: @R.color/inv_bg;
+        border.resource: none;
+        padding: none;
+        direction: vertical;
+        margin: 1cm;
+        height: 30%;
     });
 }

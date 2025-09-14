@@ -2,39 +2,37 @@
 #![feature(iter_next_chunk)]
 #![feature(exact_size_is_empty)]
 
-mod world;
-mod game;
-mod debug;
-mod gameloop;
 mod camera;
-mod res;
-mod input;
-mod player;
+mod debug;
 mod drawutils;
-mod rendering;
-mod ui;
-mod uistyles;
+mod game;
+mod gameloop;
 mod gamesettings;
 mod ingredients;
+mod input;
+mod player;
+mod rendering;
+mod res;
+mod ui;
+mod uistyles;
+mod world;
 
-use std::{env, fs, thread};
-use std::fs::{File, OpenOptions};
 use crate::gameloop::GameHandler;
+use api::server::{startup_internal_server, ServerSync};
 use log::{debug, info, warn, LevelFilter};
 use mvengine::net::client::ClientHandler;
 use mvengine::utils::Expect2;
 use mvengine::window::{Window, WindowCreateInfo};
 use mvutils::save::Savable;
+use mvutils::utils::Time;
+use std::fs::{File, OpenOptions};
 use std::io::stdout;
 use std::path::PathBuf;
-use mvutils::utils::Time;
-use api::server::{startup_internal_server, ServerSync};
+use std::{env, fs, thread};
 
 fn get_logs_path() -> Option<PathBuf> {
     if let Ok(appdata) = env::var("APPDATA") {
-        let path = PathBuf::from(appdata)
-            .join(".factoryisland")
-            .join("logs");
+        let path = PathBuf::from(appdata).join(".factoryisland").join("logs");
         Some(path)
     } else {
         None
@@ -42,19 +40,26 @@ fn get_logs_path() -> Option<PathBuf> {
 }
 
 fn main() {
-
     //let mut logpath = get_logs_path().unwrap();
     //fs::create_dir_all(&logpath);
     //logpath.push(format!("{}.log", u128::time_millis()));
     //let file = OpenOptions::new().write(true).create(true).truncate(true).open(&logpath).unwrap();
 
-    let args = env::args();
+    let mut args = env::args();
     let mut server = false;
-    for arg in args {
-        debug!("arg: {arg}");
+    let mut world = None;
+
+    while let Some(arg) = args.next() {
         match arg.as_str() {
-            "-internalserver" => { server = true }
-            other => warn!("Unrecognized argument: {other}")
+            "-internalserver" => server = true,
+            "-world" => {
+                if let Some(w) = args.next() {
+                    world = Some(w);
+                } else {
+                    warn!("Expected value after -world, but none was given");
+                }
+            }
+            other => warn!("Unrecognized argument: {other}"),
         }
     }
 
@@ -64,7 +69,7 @@ fn main() {
         let cloned = sync1.clone();
         thread::spawn(|| {
             info!("Starting internal server...");
-            startup_internal_server(false, cloned);
+            startup_internal_server(false, cloned, world);
         });
         sync = Some(sync1);
     }

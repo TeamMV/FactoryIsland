@@ -12,10 +12,12 @@ r! {
             <color name="inv_slot_border" val="black"/>
 
             <color name="ui_bg" val="#363636AA"/>
+            <color name="ui_bg_hover" val="#575757AA"/>
             <color name="ui_highlight" val="#EDD605FF"/>
         </colors>
         <dimensions>
             <dimension name="ui_widget_width" val="10cm"/>
+            <dimension name="ui_widget_width_small" val="5cm"/>
             <dimension name="ui_widget_height" val="1.5cm"/>
         </dimensions>
         <shapes>

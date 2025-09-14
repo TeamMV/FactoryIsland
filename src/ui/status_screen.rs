@@ -1,9 +1,10 @@
-use std::any::Any;
-use std::ops::Deref;
-use log::warn;
+use crate::gameloop::GameHandler;
+use crate::ui::GameUiCallbacks;
+use crate::uistyles;
 use mvengine::expect_element_by_id;
 use mvengine::input::consts::MouseButton;
-use mvengine::net::client::Client;
+use mvengine::ui::elements::events::UiClickAction;
+use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
 use mvengine::ui::page::Page;
 use mvengine::ui::styles::UiStyle;
@@ -12,16 +13,8 @@ use mvengine_proc::ui;
 use mvutils::lazy;
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
-use parking_lot::Mutex;
-use crate::gameloop::GameHandler;
-use crate::ui::GameUiCallbacks;
-use crate::uistyles;
-use mvengine::ui::elements::div::Div;
-use mvengine::ui::elements::button::Button;
-use mvengine::ui::elements::UiElementStub;
 use ropey::Rope;
-use mvengine::ui::elements::child::ToChild;
-use mvengine::ui::elements::events::UiClickAction;
+use std::any::Any;
 
 lazy! {
     pub static STATUS_MSG: State<Rope> = State::new(Rope::new());
@@ -29,18 +22,18 @@ lazy! {
 
 pub struct StatusScreen {
     elem: ThreadSafe<Element>,
-    back_btn: ThreadSafe<Element>
+    back_btn: ThreadSafe<Element>,
 }
 
 impl StatusScreen {
-    pub fn new(window: &Window) -> Self  {
+    pub fn new(window: &Window) -> Self {
         let main_style = uistyles::BG.clone();
         let mut vert_style = UiStyle::stack_vertical();
         vert_style.merge_at_set_of(&uistyles::CLEAR);
 
         let widget_style = uistyles::PRESET.clone();
         let text_style = uistyles::CLEAR_PRESET.clone();
-        
+
         let state = STATUS_MSG.clone();
 
         let elem = ui! {
@@ -75,12 +68,8 @@ impl GameUiCallbacks for StatusScreen {
     }
 
     fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
-        if let Some(event) = &self.back_btn.as_ref().get().state().events.click_event {
-            if let MouseButton::Left = event.button {
-                if let UiClickAction::Click = event.base.action {
-                    game_handler.ui_manager.go_back(window);
-                }
-            }
+        if self.back_btn.was_left_clicked() {
+            game_handler.ui_manager.go_back(window);
         }
     }
 

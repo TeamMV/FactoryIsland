@@ -1,16 +1,16 @@
-use mvengine::color::RgbColor;
 use crate::drawutils;
 use crate::drawutils::Fill;
 use crate::game::worldview::WorldView;
+use crate::gamesettings::GameSettings;
+use crate::res::R;
 use crate::world::tiles::impls::CLIENT_TILE_REG;
 use api::world::tiles::pos::TilePos;
+use api::world::{resolve_unit, SingleTileUnit};
+use mvengine::color::RgbColor;
 use mvengine::rendering::RenderContext;
 use mvengine::ui::context::UiResources;
 use mvengine::ui::geometry::shape::shapes;
 use mvengine::window::Window;
-use api::world::{resolve_unit, SingleTileUnit};
-use crate::gamesettings::GameSettings;
-use crate::res::R;
 
 pub fn draw_overlay(view: &mut WorldView, window: &Window, settings: &GameSettings) {
     let pipeline = &mut view.overlay_pipeline;
@@ -21,14 +21,17 @@ pub fn draw_overlay(view: &mut WorldView, window: &Window, settings: &GameSettin
     if let Some(sel) = view.tile_selection.selected_tile() {
         view.player_pipeline.next_pipeline(pipeline);
 
-
-        if let Some(tile) = CLIENT_TILE_REG.reference_object(sel.id.saturating_sub(1)) {
+        if let Some(tile) = CLIENT_TILE_REG.reference_object(sel.saturating_sub(1) as usize) {
             let mx = window.input.mouse_x;
             let my = window.input.mouse_y;
             let pos = TilePos::from_screen((mx, my), &player.camera.view_area, tile_size);
 
             if *settings.indicator_circle.read() {
-                let (px, py) = drawutils::get_screen_pos(&player.camera.view_area, player.pos(), view.tile_size);
+                let (px, py) = drawutils::get_screen_pos(
+                    &player.camera.view_area,
+                    player.pos(),
+                    view.tile_size,
+                );
                 let reach = (player.reach * view.tile_size as SingleTileUnit) as i32;
                 let circle = shapes::circle0(px, py, reach, 30);
                 circle.draw(pipeline, |v| {
@@ -38,7 +41,14 @@ pub fn draw_overlay(view: &mut WorldView, window: &Window, settings: &GameSettin
 
             if pos.distance_from(player) <= player.reach {
                 let y = pipeline.controller().next_z();
-                drawutils::draw_in_world_tile(pipeline, &player.camera.view_area, pos, Fill::Drawable(tile.base.clone(), orientation), tile_size, y);
+                drawutils::draw_in_world_tile(
+                    pipeline,
+                    &player.camera.view_area,
+                    pos,
+                    Fill::Drawable(tile.base.clone(), orientation),
+                    tile_size,
+                    y,
+                );
             }
         }
 

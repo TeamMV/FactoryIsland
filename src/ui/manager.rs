@@ -1,13 +1,13 @@
-use log::warn;
+use crate::game::Game;
 use crate::gameloop::GameHandler;
 use crate::ui::escape_screen::EscapeScreen;
 use crate::ui::mainscreen::Mainscreen;
-use crate::ui::GameUi;
-use mvengine::ui::elements::UiElementStub;
-use mvengine::window::Window;
-use crate::game::Game;
 use crate::ui::settings::SettingsScreen;
 use crate::ui::status_screen::StatusScreen;
+use crate::ui::GameUi;
+use log::warn;
+use mvengine::ui::elements::UiElementStub;
+use mvengine::window::Window;
 
 pub const AMT_UIS: usize = 4;
 
@@ -18,7 +18,7 @@ pub const UI_STATUS_SCREEN: usize = 3;
 
 pub struct GameUiManager {
     current: Option<usize>,
-    pub uis: [GameUi; AMT_UIS]
+    pub uis: [GameUi; AMT_UIS],
 }
 
 impl GameUiManager {
@@ -26,11 +26,13 @@ impl GameUiManager {
         let this = Self {
             current: None,
             uis: [
-                GameUi::new(Mainscreen::new(window, game)).expect("vanilla stuff that cannot break"),
+                GameUi::new(Mainscreen::new(window, game))
+                    .expect("vanilla stuff that cannot break"),
                 GameUi::new(EscapeScreen::new(window)).expect("vanilla stuff that cannot break"),
-                GameUi::new(SettingsScreen::new(window, game)).expect("vanilla stuff that cannot break"),
+                GameUi::new(SettingsScreen::new(window, game))
+                    .expect("vanilla stuff that cannot break"),
                 GameUi::new(StatusScreen::new(window)).expect("vanilla stuff that cannot break"),
-            ]
+            ],
         };
 
         for gui in &this.uis {
@@ -40,7 +42,7 @@ impl GameUiManager {
 
         this
     }
-    
+
     pub fn goto(&mut self, ui: usize, window: &mut Window) {
         if let Some(elem) = self.uis.get_mut(ui) {
             elem.open(window);
@@ -49,7 +51,7 @@ impl GameUiManager {
             warn!("Invalid screen index!");
         }
     }
-    
+
     pub fn close_all(&mut self, window: &mut Window) {
         window.ui_mut().page_manager_mut().close_all();
         self.current = None;
@@ -58,12 +60,17 @@ impl GameUiManager {
     pub fn go_back(&mut self, window: &mut Window) {
         let id = window.ui_mut().page_manager_mut().go_back();
         if let Some(id) = id.as_deref() {
-            if let Some((meant, _)) = self.uis.iter().enumerate().find(|(_, g)| g.callbacks.get_name() == id) {
+            if let Some((meant, _)) = self
+                .uis
+                .iter()
+                .enumerate()
+                .find(|(_, g)| g.callbacks.get_name() == id)
+            {
                 self.current = Some(meant);
             }
         }
     }
-    
+
     pub fn check_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
         if let Some(current) = self.current {
             if let Some(ui) = self.uis.get_mut(current) {

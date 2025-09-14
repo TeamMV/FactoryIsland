@@ -5,7 +5,7 @@ pub struct Camera {
     pub pos: (i32, i32),
     pub width: i32,
     pub height: i32,
-    pub view_area: SimpleRect
+    pub view_area: SimpleRect,
 }
 
 impl Camera {

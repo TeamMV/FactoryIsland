@@ -1,26 +1,37 @@
+use crate::drawutils::Fill;
 use crate::game::{place_tile, Game};
 use crate::gameloop::FactoryIslandClient;
 use crate::gamesettings::GameSettings;
-use crate::{drawutils, input};
+use crate::input::{ESCAPE, ROTATE_L, ROTATE_R};
 use crate::player::ClientPlayer;
 use crate::rendering::WorldShaders;
+use crate::res::R;
 use crate::ui::display::chat::Chat;
 use crate::ui::display::TileSelection;
+use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
+use crate::world::tiles::impls::CLIENT_TILE_REG;
 use crate::world::ClientWorld;
-use api::server::packets::common::{ClientDataPacket, ServerStatePacket, TileKind};
+use crate::{drawutils, input};
+use api::ingredients::IngredientKind;
+use api::server::packets::common::{ClientDataPacket, ServerStatePacket};
 use api::server::packets::world::TileSetFromClientPacket;
 use api::server::{ClientBoundPacket, ServerBoundPacket};
 use api::world::tiles::pos::TilePos;
 use api::world::tiles::Orientation;
+use api::world::SingleTileUnit;
+use log::trace;
 use mvengine::input::consts::MouseButton;
 use mvengine::math::vec::Vec2;
 use mvengine::modify_style;
 use mvengine::net::server::ClientId;
 use mvengine::rendering::pipeline::RenderingPipeline;
 use mvengine::rendering::{OpenGLRenderer, RenderContext, CLEAR_FLAG};
+use mvengine::ui::context::UiResources;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::{Element, UiElementStub};
+use mvengine::ui::rendering::adaptive::AdaptiveFill;
+use mvengine::ui::rendering::WideRenderContext;
 use mvengine::ui::styles::InheritSupplier;
 use mvengine::window::Window;
 use mvengine_proc::style_expr;
@@ -29,17 +40,7 @@ use mvutils::hashers::U64IdentityHasher;
 use mvutils::thread::ThreadSafe;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
-use log::trace;
-use mvengine::ui::context::UiResources;
-use mvengine::ui::rendering::adaptive::AdaptiveFill;
-use mvengine::ui::rendering::WideRenderContext;
-use api::ingredients::IngredientKind;
-use api::world::SingleTileUnit;
-use crate::drawutils::Fill;
-use crate::input::{ESCAPE, ROTATE_L, ROTATE_R};
-use crate::res::R;
-use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
-use crate::world::tiles::impls::CLIENT_TILE_REG;
+use crate::ui::display::inventory::{CurrentInvDisplay, InventoryDisplay};
 
 pub type RP = RenderingPipeline<OpenGLRenderer>;
 
@@ -50,6 +51,7 @@ pub struct WorldView {
     pub tile_selection: TileSelection,
     pub ingredients: Vec<IngredientKind>,
     pub chat: Chat,
+    pub inventory: CurrentInvDisplay,
 
     //game
     pub world: ClientWorld,
@@ -87,12 +89,7 @@ impl WorldView {
         world_pipeline.create_post(window);
         //for custom blend shader
         world_pipeline.use_custom_backbuffer(window);
-        let [
-            ssao,
-            clouds,
-            overlay,
-            overlay_blend
-        ] = [
+        let [ssao, clouds, overlay, overlay_blend] = [
             shaders.ssao,
             shaders.clouds,
             shaders.overlay,
@@ -112,13 +109,18 @@ impl WorldView {
             tile_selection: TileSelection::new(window, server_state_packet.tiles.into_iter()),
             ingredients: server_state_packet.ingredients,
             chat: Chat::new(window),
+            inventory: CurrentInvDisplay::new(window),
             world: ClientWorld::new(),
             tile_size: 50,
-            player: ClientPlayer::new(1, 1, ClientDataPacket {
-                profile: game.profile.clone(),
-                render_distance: 1,
-                client_id: server_state_packet.client_id,
-            }),
+            player: ClientPlayer::new(
+                1,
+                1,
+                ClientDataPacket {
+                    profile: game.profile.clone(),
+                    render_distance: 1,
+                    client_id: server_state_packet.client_id,
+                },
+            ),
             other_players: map,
             orientation: Orientation::North,
             world_pipeline,
@@ -134,12 +136,15 @@ impl WorldView {
     }
 
     pub fn open(&mut self, window: &mut Window) {
-        self.tile_selection.open(window, self.click_area.as_ref().clone());
+        self.tile_selection
+            .open(window, self.click_area.as_ref().clone());
         window.ui_mut().add_root(self.click_area.as_ref().clone());
     }
 
     pub fn close(&mut self, window: &mut Window) {
-        window.ui_mut().remove_root(self.click_area.as_ref().clone());
+        window
+            .ui_mut()
+            .remove_root(self.click_area.as_ref().clone());
     }
 
     pub fn resize(&mut self, window: &Window) {
@@ -162,7 +167,13 @@ impl WorldView {
         self.other_players.remove(&id);
     }
 
-    pub fn draw(&mut self, window: &mut Window, prev_pipeline: Option<&mut RP>, next_pipeline: Option<&mut RP>, settings: &GameSettings) {
+    pub fn draw(
+        &mut self,
+        window: &mut Window,
+        prev_pipeline: Option<&mut RP>,
+        next_pipeline: Option<&mut RP>,
+        settings: &GameSettings,
+    ) {
         if let Some(pl) = prev_pipeline {
             pl.next_pipeline(&mut self.world_pipeline);
         } else {
@@ -173,7 +184,11 @@ impl WorldView {
         OpenGLRenderer::enable_depth_test();
 
         trace!("Beginning of draw");
-        self.world.draw(&mut self.world_pipeline, &self.player.camera.view_area, self.tile_size);
+        self.world.draw(
+            &mut self.world_pipeline,
+            &self.player.camera.view_area,
+            self.tile_size,
+        );
 
         //OpenGLRenderer::enable_depth_buffer();
         //draw raw world
@@ -205,7 +220,6 @@ impl WorldView {
         self.draw_players();
         self.player_pipeline.advance(window, |_| {});
 
-
         if let Some(_) = self.tile_selection.selected_tile() {
             place_tile::draw_overlay(self, window, settings);
 
@@ -225,13 +239,22 @@ impl WorldView {
 
     pub fn draw_players(&mut self) {
         for player in self.other_players.values() {
-            player.draw_from_other_pov(&mut self.player_pipeline, &self.player.camera.view_area, self.tile_size);
+            player.draw_from_other_pov(
+                &mut self.player_pipeline,
+                &self.player.camera.view_area,
+                self.tile_size,
+            );
         }
 
         self.player.draw(&mut self.player_pipeline, self.tile_size);
     }
 
-    pub fn on_frame(&mut self, window: &mut Window, client: &mut FactoryIslandClient, ui_manager: &mut GameUiManager) {
+    pub fn on_frame(
+        &mut self,
+        window: &mut Window,
+        client: &mut FactoryIslandClient,
+        ui_manager: &mut GameUiManager,
+    ) {
         if !self.initialized {
             self.initialized = true;
 
@@ -281,24 +304,30 @@ impl WorldView {
             if event.button == MouseButton::Left && event.base.action == UiClickAction::Click {
                 let screen_pos = (window.input.mouse_x, window.input.mouse_y);
                 if let Some(tile) = self.tile_selection.selected_tile() {
-                    let pos = TilePos::from_screen(screen_pos, &self.player.camera.view_area, self.tile_size);
+                    let pos = TilePos::from_screen(
+                        screen_pos,
+                        &self.player.camera.view_area,
+                        self.tile_size,
+                    );
                     if pos.distance_from(&self.player) <= self.player.reach {
-                        self.world.set_ghost_block(&pos, tile.id, self.orientation);
+                        self.world.set_ghost_block(&pos, *tile, self.orientation);
                         client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
                             pos,
-                            tile_id: tile.id,
-                            tile_state: vec![],
+                            tile_id: *tile,
                             orientation: self.orientation,
                         }));
                     }
                 } else {
-                    let pos = TilePos::from_screen(screen_pos, &self.player.camera.view_area, self.tile_size);
+                    let pos = TilePos::from_screen(
+                        screen_pos,
+                        &self.player.camera.view_area,
+                        self.tile_size,
+                    );
                     if pos.distance_from(&self.player) <= self.player.reach {
                         self.world.set_ghost_block(&pos, 0, self.orientation);
                         client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
                             pos,
                             tile_id: 0,
-                            tile_state: vec![],
                             orientation: self.orientation,
                         }));
                     }
@@ -311,25 +340,36 @@ impl WorldView {
                 Orientation::North => Orientation::West,
                 Orientation::South => Orientation::East,
                 Orientation::East => Orientation::North,
-                Orientation::West => Orientation::South
+                Orientation::West => Orientation::South,
             }
         } else if window.input.was_action(ROTATE_R) {
             self.orientation = match self.orientation {
                 Orientation::North => Orientation::East,
                 Orientation::South => Orientation::West,
                 Orientation::East => Orientation::South,
-                Orientation::West => Orientation::North
+                Orientation::West => Orientation::North,
             }
+        }
+    }
+
+    pub fn check_window_packet(&mut self, packet: ClientBoundPacket, window: &mut Window, game: &Game) {
+        match packet {
+            ClientBoundPacket::InventoryDataPacket(packet) => {
+                let mut inv = InventoryDisplay::new(packet);
+                inv.create_ui(window.ui().context());
+                self.inventory.open(inv, window);
+            }
+            _ => {}
         }
     }
 
     pub fn check_packet(&mut self, packet: ClientBoundPacket, game: &Game) {
         match packet {
             ClientBoundPacket::TileSet(packet) => {
-                self.world.sync(packet, game);
+                self.world.sync(packet);
             }
             ClientBoundPacket::ChunkData(packet) => {
-                self.world.sync_chunk(packet, game);
+                self.world.sync_chunk(packet);
             }
             ClientBoundPacket::PlayerMove(packet) => {
                 self.player.move_to(packet.pos, self.tile_size);
@@ -341,7 +381,11 @@ impl WorldView {
             }
             ClientBoundPacket::OtherPlayerJoin(packet) => {
                 let id = packet.client_id;
-                let player = ClientPlayer::new(self.player.camera.width, self.player.camera.height, packet.client_data);
+                let player = ClientPlayer::new(
+                    self.player.camera.width,
+                    self.player.camera.height,
+                    packet.client_data,
+                );
                 self.player_join(player, id);
             }
             ClientBoundPacket::OtherPlayerLeave(packet) => {

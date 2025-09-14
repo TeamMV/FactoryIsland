@@ -6,7 +6,8 @@ use crate::app::LauncherApp;
 mod app;
 mod res;
 mod uistyles;
-mod err;
+mod winmsg;
+mod pages;
 
 fn main() {
     let mut info = WindowCreateInfo::default();

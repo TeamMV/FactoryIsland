@@ -1,11 +1,11 @@
 use crate::game::Game;
 use log::{error, info};
+use mvengine::input::consts::{Key, MouseButton};
 use mvengine::input::registry::{Direction, RawInput};
 use mvengine::input::Input;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use mvengine::input::consts::{Key, MouseButton};
 
 pub const MOVE_FORWARD: &str = "move_forward";
 pub const MOVE_BACK: &str = "move_back";
@@ -41,7 +41,10 @@ impl InputManager {
         actions.bind_action(MOVE_RIGHT, vec![RawInput::KeyPress(Key::D)]);
         actions.bind_action(ESCAPE, vec![RawInput::KeyPress(Key::Escape)]);
         actions.bind_action(CHAT, vec![RawInput::KeyPress(Key::Return)]);
-        actions.bind_action(RELOAD_CHUNKS, vec![RawInput::KeyPress(Key::F3), RawInput::KeyPress(Key::R)]);
+        actions.bind_action(
+            RELOAD_CHUNKS,
+            vec![RawInput::KeyPress(Key::F3), RawInput::KeyPress(Key::R)],
+        );
         actions.bind_action(ROTATE_L, vec![RawInput::Scroll(Direction::Up)]);
         actions.bind_action(ROTATE_R, vec![RawInput::Scroll(Direction::Down)]);
 

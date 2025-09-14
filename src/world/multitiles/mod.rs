@@ -1,11 +1,11 @@
-use mvengine::graphics::Drawable;
-use mvutils::lazy;
+use crate::res::R;
 use api::multitile::MultiTilePlacement;
 use api::player::uuid::UUID;
 use api::registry::{Registerable, Registry};
-use api::world::TileExtent;
 use api::world::tiles::pos::TilePos;
-use crate::res::R;
+use api::world::TileExtent;
+use mvengine::graphics::Drawable;
+use mvutils::lazy;
 
 pub struct ClientMultiTilePlacement {
     pub uuid: UUID,
@@ -17,10 +17,10 @@ pub struct ClientMultiTilePlacement {
 
 impl ClientMultiTilePlacement {
     pub fn includes(&self, pos: &TilePos) -> bool {
-        pos.raw.0 >= self.pos.raw.0 &&
-            pos.raw.0 < self.pos.raw.0 + self.extent.0 &&
-            pos.raw.1 >= self.pos.raw.1 &&
-            pos.raw.1 < self.pos.raw.1 + self.extent.1
+        pos.raw.0 >= self.pos.raw.0
+            && pos.raw.0 < self.pos.raw.0 + self.extent.0
+            && pos.raw.1 >= self.pos.raw.1
+            && pos.raw.1 < self.pos.raw.1 + self.extent.1
     }
 }
 
@@ -40,14 +40,14 @@ impl From<MultiTilePlacement> for ClientMultiTilePlacement {
 pub struct ClientMultiTile {
     pub id: usize,
     pub base: Drawable,
-    pub optional: Option<Drawable>
+    pub optional: Option<Drawable>,
 }
 
 impl ClientMultiTile {
     pub fn get_relevant_texture(&self, is_wide: bool) -> Drawable {
         if !is_wide {
             if let Some(drawable) = self.optional.clone() {
-            return drawable;
+                return drawable;
             }
         }
         self.base.clone()
@@ -68,7 +68,7 @@ impl Registerable for ClientMultiTile {
 
 pub struct ClientMultiTileCreateInfo {
     base: Drawable,
-    optional: Option<Drawable>
+    optional: Option<Drawable>,
 }
 
 impl ClientMultiTileCreateInfo {
@@ -92,5 +92,8 @@ lazy! {
 }
 
 pub fn register_all() {
-    CLIENT_MULTI_REG.register(ClientMultiTileCreateInfo::multi_texture(Drawable::Texture(R.texture.multitile_test), Drawable::Texture(R.texture.multitile_test_up)));
+    CLIENT_MULTI_REG.register(ClientMultiTileCreateInfo::multi_texture(
+        Drawable::Texture(R.texture.multitile_test),
+        Drawable::Texture(R.texture.multitile_test_up),
+    ));
 }
