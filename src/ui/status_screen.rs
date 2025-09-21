@@ -2,8 +2,6 @@ use crate::gameloop::GameHandler;
 use crate::ui::GameUiCallbacks;
 use crate::uistyles;
 use mvengine::expect_element_by_id;
-use mvengine::input::consts::MouseButton;
-use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
 use mvengine::ui::page::Page;
@@ -12,7 +10,6 @@ use mvengine::window::Window;
 use mvengine_proc::ui;
 use mvutils::lazy;
 use mvutils::state::State;
-use mvutils::thread::ThreadSafe;
 use ropey::Rope;
 use std::any::Any;
 
@@ -21,8 +18,8 @@ lazy! {
 }
 
 pub struct StatusScreen {
-    elem: ThreadSafe<Element>,
-    back_btn: ThreadSafe<Element>,
+    elem: Element,
+    back_btn: Element,
 }
 
 impl StatusScreen {
@@ -50,15 +47,15 @@ impl StatusScreen {
         let back_btn = expect_element_by_id!(elem, "back");
 
         Self {
-            elem: ThreadSafe::new(elem),
-            back_btn: ThreadSafe::new(back_btn),
+            elem,
+            back_btn,
         }
     }
 }
 
 impl Page for StatusScreen {
     fn get_elem(&self) -> Element {
-        self.elem.as_ref().clone()
+        self.elem.clone()
     }
 }
 

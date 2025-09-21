@@ -1,5 +1,6 @@
 pub mod chat;
 pub mod inventory;
+pub mod ingredient;
 
 use crate::world::tiles::impls::CLIENT_TILE_REG;
 use api::server::packets::common::TileKind;
@@ -15,6 +16,7 @@ use mvengine::ui::styles::enums::BackgroundRes;
 use mvengine::ui::styles::{UiStyle, UiValue, EMPTY_STYLE};
 use mvengine::window::Window;
 use mvengine::{expect_element_by_id, modify_style};
+use mvengine::ui::layouts::uniqueselect::UniqueSelectLayout;
 use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::lazy;
@@ -37,10 +39,9 @@ lazy! {
 }
 
 pub struct TileSelection {
-    selected_index: Option<usize>,
     tiles: Vec<TileKind>,
-    root: ThreadSafe<Element>,
-    buttons: Vec<ThreadSafe<Element>>,
+    root: Element,
+    selection: UniqueSelectLayout,
 }
 
 impl TileSelection {
@@ -65,12 +66,12 @@ impl TileSelection {
             buttons.extend(bns);
         }
 
-        let buttons = buttons.into_iter().map(|x| ThreadSafe::new(x)).collect();
+        let mut selection = UniqueSelectLayout::new(buttons);
+        selection.set_select_style(SELECT_STYLE.clone());
 
         Self {
-            selected_index: None,
-            root: ThreadSafe::new(outer),
-            buttons,
+            selection,
+            root: outer,
             tiles,
         }
     }
@@ -117,46 +118,24 @@ impl TileSelection {
     pub fn open(&self, window: &mut Window, mut parent: Element) {
         parent
             .get_mut()
-            .add_child(self.root.as_ref().clone().to_child());
+            .add_child(self.root.clone().to_child());
     }
 
     pub fn close(&mut self, window: &mut Window) {
-        if let Some(parent) = &mut self.root.as_mut().get_mut().state_mut().parent {
+        if let Some(parent) = &mut self.root.get_mut().state_mut().parent {
             let parent = parent.get_mut();
             parent.remove_child_by_id("tile_selection");
         }
 
-        window.ui_mut().remove_root(self.root.as_ref().clone());
+        window.ui_mut().remove_root(self.root.clone());
     }
 
     pub fn check_events(&mut self) {
-        for (i, button) in self.buttons.iter().enumerate() {
-            let elem = button.as_ref().get_mut();
-            if let Some(event) = &elem.state().events.click_event {
-                if let UiClickAction::Click = event.base.action {
-                    if let MouseButton::Left = event.button {
-                        if let Some(prev) = self.selected_index {
-                            let prev_btn = &self.buttons[prev];
-                            prev_btn
-                                .as_ref()
-                                .get_mut()
-                                .style_mut()
-                                .merge_at_set_of(&NO_SELECT_STYLE);
-                            if prev == i {
-                                self.selected_index = None;
-                                return;
-                            }
-                        }
-                        self.selected_index = Some(i);
-                        elem.style_mut().merge_at_set_of(&SELECT_STYLE);
-                    }
-                }
-            }
-        }
+        self.selection.check_events();
     }
 
     pub fn selected_tile(&self) -> Option<&TileKind> {
-        if let Some(idx) = self.selected_index {
+        if let Some(idx) = self.selection.selected_idx() {
             Some(&self.tiles[idx])
         } else {
             None

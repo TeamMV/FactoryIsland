@@ -90,6 +90,7 @@ impl WindowCallbacks for GameHandler {
             world::tiles::impls::register_tiles();
             world::multitiles::register_all();
             ingredients::register_ingredients();
+            let api_ingredients = registry::ingredients::register_all();
             window.ui_mut().init(R.deref().deref());
 
             let mut ui_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
@@ -146,7 +147,7 @@ impl WindowCallbacks for GameHandler {
         self.ui_manager.check_events(window, unsafe_self);
 
         let a = window.area();
-        window.ui_mut().draw(&mut *self.ui_pipeline, &a);
+        window.ui_mut().draw_debug(&mut *self.ui_pipeline, &a);
         //OpenGLRenderer::disable_depth_test();
         //OpenGLRenderer::enable_depth_buffer();
         self.ui_pipeline.advance(window, |_| {});

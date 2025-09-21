@@ -16,7 +16,7 @@ use std::any::Any;
 
 pub struct GameUi {
     pub callbacks: Box<dyn GameUiCallbacks>,
-    element: ThreadSafe<Element>,
+    element: Element,
 }
 
 impl GameUi {
@@ -29,7 +29,7 @@ impl GameUi {
         } else {
             Some(Self {
                 callbacks: Box::new(callbacks),
-                element: ThreadSafe::new(rc),
+                element: rc,
             })
         }
     }

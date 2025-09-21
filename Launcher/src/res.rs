@@ -1,6 +1,7 @@
 use mvengine_proc::r;
 
 use mvengine::ui::context::UiResources;
+use mvengine::ui::styles::Parseable;
 
 r! {
     <resources structName="R" cdir="../res/">

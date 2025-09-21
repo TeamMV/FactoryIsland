@@ -1,27 +1,24 @@
 use crate::gameloop::FactoryIslandClient;
 use api::server::packets::player::{OtherPlayerChatPacket, PlayerChatPacket};
 use api::server::ServerBoundPacket;
-use mvengine::net::server::ClientEndpoint;
 use mvengine::ui::context::UiContext;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
 use mvengine::ui::elements::UiElement;
 use mvengine::utils::RopeFns;
 use mvengine::window::Window;
-use mvengine::{expect_element_by_id, expect_inner_element_by_id_mut, modify_style};
+use mvengine::{expect_inner_element_by_id_mut, modify_style};
 use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
 use mvutils::thread::ThreadSafe;
 use ropey::Rope;
-use std::ops::Deref;
-use std::sync::Arc;
 
 pub struct Chat {
     pub open: bool,
-    element: ThreadSafe<Element>,
-    scroll_div: ThreadSafe<Element>,
+    element: Element,
+    scroll_div: Element,
     chat_state: State<Rope>,
     context: ThreadSafe<UiContext>,
 }
@@ -50,15 +47,15 @@ impl Chat {
 
         Self {
             open: false,
-            element: ThreadSafe::new(element),
-            scroll_div: ThreadSafe::new(scroll_elem),
+            element,
+            scroll_div: scroll_elem,
             chat_state,
             context: ThreadSafe::new(window.ui().context()),
         }
     }
 
     pub fn open(&self, window: &mut Window) {
-        let elem = self.element.as_ref().clone();
+        let elem = self.element.clone();
         expect_inner_element_by_id_mut!(elem, TextBox, "chat_input", input => {
             input.focus_now();
         });
@@ -67,7 +64,7 @@ impl Chat {
     }
 
     pub fn close(&self, window: &mut Window) {
-        window.ui_mut().remove_root(self.element.as_ref().clone());
+        window.ui_mut().remove_root(self.element.clone());
     }
 
     pub fn toggle(&mut self, window: &mut Window, client: &mut FactoryIslandClient) {

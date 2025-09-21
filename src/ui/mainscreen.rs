@@ -26,15 +26,14 @@ use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::enum_val_ref_mut;
 use mvutils::state::State;
-use mvutils::thread::ThreadSafe;
 use ropey::Rope;
 use std::any::Any;
 use std::ops::Deref;
 
 pub struct Mainscreen {
-    elem: ThreadSafe<Element>,
-    connect_btn: ThreadSafe<Element>,
-    settings_btn: ThreadSafe<Element>,
+    elem: Element,
+    connect_btn: Element,
+    settings_btn: Element,
     server_ip: UiState,
     pub last_ip: State<Rope>,
 }
@@ -84,9 +83,9 @@ impl Mainscreen {
         });
 
         Self {
-            elem: ThreadSafe::new(elem),
-            connect_btn: ThreadSafe::new(connect_btn),
-            settings_btn: ThreadSafe::new(settings_btn),
+            elem,
+            connect_btn,
+            settings_btn,
             server_ip: content,
             last_ip,
         }
@@ -95,7 +94,7 @@ impl Mainscreen {
 
 impl Page for Mainscreen {
     fn get_elem(&self) -> Element {
-        self.elem.as_ref().clone()
+        self.elem.clone()
     }
 }
 

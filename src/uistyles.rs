@@ -27,11 +27,12 @@ lazy! {
         let m = multiline_str_into!(style_expr_empty, {
             width: 100%;
             height: 100%;
-            padding: 2.5cm;
+            padding: none;
             overflow_x: never;
             overflow_y: never;
             child_align_x: middle;
             child_align_y: middle;
+            margin: none;
         });
         let mut base = CLEAR.clone();
         base.merge_at_set_of(&m);
@@ -116,6 +117,48 @@ lazy! {
         border.resource: none;
     });
 
+    pub static H_LAYOUT: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            margin: none;
+            padding: none;
+            direction: horizontal;
+        });
+        let mut base = CLEAR.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
+    pub static H_LAYOUT_MAX: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            direction: horizontal;
+            width: 5cm;
+        });
+        let mut base = H_LAYOUT.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
+    pub static V_LAYOUT: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            margin: none;
+            padding: none;
+            direction: vertical;
+        });
+        let mut base = CLEAR.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
+    pub static HV_LAYOUT_MAX: UiStyle = {
+        let m = multiline_str_into!(style_expr_empty, {
+            direction: vertical;
+            height: 100%;
+        });
+        let mut base = V_LAYOUT.clone();
+        base.merge_at_set_of(&m);
+        base
+    };
+
     pub static SLOT_OUTER_STYLE: UiStyle = multiline_str_into!(style_expr,{
         background.resource: color;
         hover.background.color: @R.color/inv_slot_hover;
@@ -144,6 +187,9 @@ lazy! {
         border.resource: none;
         direction: vertical;
         child_align_x: middle;
+        child_align_y: middle;
+        height: 100%;
+        width: 100%;
     });
 
     pub static INVENTORY_STYLE: UiStyle = multiline_str_into!(style_expr,{
@@ -153,6 +199,7 @@ lazy! {
         padding: none;
         direction: vertical;
         margin: 1cm;
-        height: 30%;
+        height.max: 40%;
+        padding.right: 1bf;
     });
 }

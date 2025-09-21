@@ -1,11 +1,9 @@
 use crate::gameloop::GameHandler;
-use crate::ui::manager::{UI_MAIN_SCREEN, UI_SETTINGS_SCREEN};
+use crate::ui::manager::UI_MAIN_SCREEN;
 use crate::ui::GameUiCallbacks;
 use crate::uistyles;
 use mvengine::color::RgbColor;
-use mvengine::input::consts::MouseButton;
 use mvengine::net::DisconnectReason;
-use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
 use mvengine::ui::page::Page;
@@ -13,18 +11,16 @@ use mvengine::ui::styles::{UiStyle, UiValue};
 use mvengine::window::Window;
 use mvengine::{expect_element_by_id, modify_style};
 use mvengine_proc::ui;
-use mvutils::thread::ThreadSafe;
 use std::any::Any;
-use std::process::exit;
 use api::inventory::InventoryOwner;
 use api::server::packets::inventory::InventoryOpenPacket;
 use api::server::ServerBoundPacket;
 
 pub struct EscapeScreen {
-    elem: ThreadSafe<Element>,
-    quit_btn: ThreadSafe<Element>,
-    back_btn: ThreadSafe<Element>,
-    settings_btn: ThreadSafe<Element>,
+    elem: Element,
+    quit_btn: Element,
+    back_btn: Element,
+    settings_btn: Element,
 }
 
 impl EscapeScreen {
@@ -57,17 +53,17 @@ impl EscapeScreen {
         let settings_btn = expect_element_by_id!(elem, "settings");
 
         Self {
-            elem: ThreadSafe::new(elem),
-            quit_btn: ThreadSafe::new(quit_btn),
-            back_btn: ThreadSafe::new(back_btn),
-            settings_btn: ThreadSafe::new(settings_btn),
+            elem,
+            quit_btn,
+            back_btn,
+            settings_btn
         }
     }
 }
 
 impl Page for EscapeScreen {
     fn get_elem(&self) -> Element {
-        self.elem.as_ref().clone()
+        self.elem.clone()
     }
 }
 

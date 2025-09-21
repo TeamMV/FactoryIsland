@@ -16,8 +16,8 @@ use mvutils::thread::ThreadSafe;
 use std::any::Any;
 
 pub struct SettingsScreen {
-    elem: ThreadSafe<Element>,
-    back_btn: ThreadSafe<Element>,
+    elem: Element,
+    back_btn: Element,
 
     pub enable_clouds: State<bool>,
     pub enable_ssao: State<bool>,
@@ -62,8 +62,8 @@ impl SettingsScreen {
         let back_btn = expect_element_by_id!(elem, "back_btn");
 
         Self {
-            elem: ThreadSafe::new(elem),
-            back_btn: ThreadSafe::new(back_btn),
+            elem,
+            back_btn,
             enable_clouds,
             enable_ssao,
             indicator_circle,
@@ -73,7 +73,7 @@ impl SettingsScreen {
 
 impl Page for SettingsScreen {
     fn get_elem(&self) -> Element {
-        self.elem.as_ref().clone()
+        self.elem.clone()
     }
 }
 

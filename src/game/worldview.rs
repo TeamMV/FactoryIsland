@@ -47,7 +47,7 @@ pub type RP = RenderingPipeline<OpenGLRenderer>;
 /// This hold everything only present when the player is inside a world.
 pub struct WorldView {
     //ui
-    click_area: ThreadSafe<Element>,
+    click_area: Element,
     pub tile_selection: TileSelection,
     pub ingredients: Vec<IngredientKind>,
     pub chat: Chat,
@@ -105,7 +105,7 @@ impl WorldView {
         overlay_pipeline.use_custom_blend_shader(overlay_blend);
 
         let mut this = Self {
-            click_area: ThreadSafe::new(click_area),
+            click_area,
             tile_selection: TileSelection::new(window, server_state_packet.tiles.into_iter()),
             ingredients: server_state_packet.ingredients,
             chat: Chat::new(window),
@@ -137,14 +137,14 @@ impl WorldView {
 
     pub fn open(&mut self, window: &mut Window) {
         self.tile_selection
-            .open(window, self.click_area.as_ref().clone());
-        window.ui_mut().add_root(self.click_area.as_ref().clone());
+            .open(window, self.click_area.clone());
+        window.ui_mut().add_root(self.click_area.clone());
     }
 
     pub fn close(&mut self, window: &mut Window) {
         window
             .ui_mut()
-            .remove_root(self.click_area.as_ref().clone());
+            .remove_root(self.click_area.clone());
     }
 
     pub fn resize(&mut self, window: &Window) {
@@ -300,37 +300,35 @@ impl WorldView {
         self.frame = self.frame.wrapping_add(1);
 
         //tile set
-        if let Some(event) = &self.click_area.get().state().events.click_event {
-            if event.button == MouseButton::Left && event.base.action == UiClickAction::Click {
-                let screen_pos = (window.input.mouse_x, window.input.mouse_y);
-                if let Some(tile) = self.tile_selection.selected_tile() {
-                    let pos = TilePos::from_screen(
-                        screen_pos,
-                        &self.player.camera.view_area,
-                        self.tile_size,
-                    );
-                    if pos.distance_from(&self.player) <= self.player.reach {
-                        self.world.set_ghost_block(&pos, *tile, self.orientation);
-                        client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
-                            pos,
-                            tile_id: *tile,
-                            orientation: self.orientation,
-                        }));
-                    }
-                } else {
-                    let pos = TilePos::from_screen(
-                        screen_pos,
-                        &self.player.camera.view_area,
-                        self.tile_size,
-                    );
-                    if pos.distance_from(&self.player) <= self.player.reach {
-                        self.world.set_ghost_block(&pos, 0, self.orientation);
-                        client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
-                            pos,
-                            tile_id: 0,
-                            orientation: self.orientation,
-                        }));
-                    }
+        if self.click_area.was_left_clicked() {
+            let screen_pos = (window.input.mouse_x, window.input.mouse_y);
+            if let Some(tile) = self.tile_selection.selected_tile() {
+                let pos = TilePos::from_screen(
+                    screen_pos,
+                    &self.player.camera.view_area,
+                    self.tile_size,
+                );
+                if pos.distance_from(&self.player) <= self.player.reach {
+                    self.world.set_ghost_block(&pos, *tile, self.orientation);
+                    client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
+                        pos,
+                        tile_id: *tile,
+                        orientation: self.orientation,
+                    }));
+                }
+            } else {
+                let pos = TilePos::from_screen(
+                    screen_pos,
+                    &self.player.camera.view_area,
+                    self.tile_size,
+                );
+                if pos.distance_from(&self.player) <= self.player.reach {
+                    self.world.set_ghost_block(&pos, 0, self.orientation);
+                    client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
+                        pos,
+                        tile_id: 0,
+                        orientation: self.orientation,
+                    }));
                 }
             }
         }
@@ -355,7 +353,7 @@ impl WorldView {
     pub fn check_window_packet(&mut self, packet: ClientBoundPacket, window: &mut Window, game: &Game) {
         match packet {
             ClientBoundPacket::InventoryDataPacket(packet) => {
-                let mut inv = InventoryDisplay::new(packet);
+                let mut inv = InventoryDisplay::new(packet, window.ui().context());
                 inv.create_ui(window.ui().context());
                 self.inventory.open(inv, window);
             }

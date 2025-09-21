@@ -48,6 +48,7 @@ use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use mvengine::game::language::Language;
 
 pub const INTERNAL_IP: &str = "127.0.0.1:4040";
 
@@ -59,6 +60,7 @@ pub struct Game {
     pub profile: PlayerProfile,
     pub is_internal: bool,
     pub persistent_game_data: PersistentLoadedData,
+    pub language: Language,
 }
 
 impl Game {
@@ -76,6 +78,9 @@ impl Game {
 
         let profile = PlayerProfile::load_or_create(&conf_dir);
 
+        //replace with smart system or like settings
+        let language = Language::parse(include_str!("../../res/languages/en.ini"));
+
         Self {
             conf_dir,
             res_dir,
@@ -84,6 +89,7 @@ impl Game {
             profile,
             is_internal,
             persistent_game_data: persistent_game_data.to_loaded(),
+            language,
         }
     }
 
@@ -93,9 +99,11 @@ impl Game {
         client: &mut Option<FactoryIslandClient>,
         ui_manager: &mut GameUiManager,
     ) {
+        let fuck_this = unsafe { Unsafe::cast_lifetime(self) };
         if let Some(view) = &mut self.world_view {
             if let Some(client) = client {
                 view.on_frame(window, client, ui_manager);
+                view.inventory.check_events(window, fuck_this);
             }
         }
     }
