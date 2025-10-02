@@ -24,6 +24,8 @@ r! {
         </shapes>
         <textures>
             <texture name="noise" src="textures/noise.png"/>
+            <texture name="uv_trans" src="textures/uv_transition.png"/>
+
             <texture name="terrain_sand" src="textures/terrain/sand.png"/>
             <texture name="terrain_grass" src="textures/terrain/grass.png" sampler="linear"/>
             <texture name="terrain_stone" src="textures/terrain/stone.png"/>

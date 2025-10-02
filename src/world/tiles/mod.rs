@@ -157,7 +157,7 @@ lazy! {
 pub static TERRAIN_TRANSITION_INSET: i32 = 5;
 
 impl LoadedClientTile {
-    pub fn draw_terrain(
+    pub fn draw_with_borders(
         &self,
         ctx: &mut impl WideRenderContext,
         tile_size: i32,

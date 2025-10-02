@@ -135,7 +135,7 @@ impl ClientWorld {
                     );
                     if view_area.intersects(&tile_rect) {
                         let terrain_height = 105;
-                        terrain.draw_terrain(
+                        terrain.draw(
                             renderer,
                             tile_size,
                             &pos,

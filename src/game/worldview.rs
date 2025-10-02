@@ -196,7 +196,10 @@ impl WorldView {
 
         //terrain transition
         self.world_pipeline.advance(window, |s| {
-            s.uniform_1f("SIZE", TERRAIN_TRANSITION_INSET as f32);
+            s.uniform_1f("TILE_SIZE", self.tile_size as f32);
+            let cam = Vec2::from_i32s(self.player.camera.pos);
+            s.uniform_2fv("CAM", &cam);
+            s.uniform_texture(R.resolve_texture(R.texture.uv_trans).unwrap(), "OFFSETS");
         });
         
         //draw ssao
