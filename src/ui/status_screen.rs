@@ -46,10 +46,7 @@ impl StatusScreen {
 
         let back_btn = expect_element_by_id!(elem, "back");
 
-        Self {
-            elem,
-            back_btn,
-        }
+        Self { elem, back_btn }
     }
 }
 

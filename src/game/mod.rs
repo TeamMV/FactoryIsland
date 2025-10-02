@@ -23,7 +23,9 @@ use api::world::tiles::terrain::TerrainTile;
 use api::world::tiles::Orientation;
 use bytebuffer::{ByteBuffer, Endian};
 use log::{debug, error, warn};
+use mvengine::game::fs::cfgdir;
 use mvengine::game::fs::smartdir::SmartDir;
+use mvengine::game::language::Language;
 use mvengine::input::consts::MouseButton;
 use mvengine::input::Input;
 use mvengine::modify_style;
@@ -48,7 +50,6 @@ use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use mvengine::game::language::Language;
 
 pub const INTERNAL_IP: &str = "127.0.0.1:4040";
 
@@ -65,20 +66,19 @@ pub struct Game {
 
 impl Game {
     pub fn new(is_internal: bool) -> Self {
-        let appdata = env::var("APPDATA").expect("Failed to get APPDATA environment variable");
-        let mut full = PathBuf::from(appdata);
+        let mut full = cfgdir::acquire_config_dir();
         full.push(input::PATH);
 
         let conf_dir = SmartDir::new(full);
         let res_dir = conf_dir.join("resources");
 
-        let mut persistent_game_data = conf_dir
+        let persistent_game_data = conf_dir
             .read_object::<PersistentGameData>(PERSISTENT_FILE)
             .unwrap_or(PersistentGameData::new());
 
         let profile = PlayerProfile::load_or_create(&conf_dir);
 
-        //replace with smart system or like settings
+        //replace with smart system or settings
         let language = Language::parse(include_str!("../../res/languages/en.ini"));
 
         Self {

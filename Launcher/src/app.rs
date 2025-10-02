@@ -13,6 +13,7 @@ use std::str::FromStr;
 use api::player::profile::PlayerProfile;
 use mvengine::color::RgbColor;
 use mvengine::expect_element_by_id;
+use mvengine::game::fs::cfgdir;
 use mvengine::game::fs::smartdir::SmartDir;
 use mvengine::game::timing::{DelayedTask, TaskId};
 use mvengine::input::consts::MouseButton;
@@ -47,8 +48,7 @@ pub struct LauncherApp {
 
 impl LauncherApp {
     pub fn new() -> Self {
-        let appdata = env::var("APPDATA").unwrap();
-        let path = PathBuf::from_str(&appdata).unwrap();
+        let path = cfgdir::acquire_config_dir();
         let path = path.join(".factoryisland");
         let fi_dir = SmartDir::new(path);
         let launcher_dir = fi_dir.join("launcher");

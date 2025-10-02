@@ -125,7 +125,7 @@ impl GameUiCallbacks for Mainscreen {
                 game_handler.ui_manager.goto(UI_STATUS_SCREEN, window);
             }
         }
-        
+
         if self.settings_btn.was_left_clicked() {
             game_handler.ui_manager.goto(UI_SETTINGS_SCREEN, window);
         }

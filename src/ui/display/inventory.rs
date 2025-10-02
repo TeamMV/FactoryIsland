@@ -31,7 +31,7 @@ pub struct InventoryDisplay {
 
     selection: Option<UniqueSelectLayout>,
     item_display: Option<IngredientDisplay>,
-    item_display_container: Element
+    item_display_container: Element,
 }
 // в В т Т ь Ь ч Ч к К п П р Р д Д ж Ж ф Ф ы Ы у У н Н г Г ш Ш я Я м М и И б Б ю Ю э Э х Х з З
 
@@ -98,7 +98,12 @@ impl InventoryDisplay {
 
         self.all_buttons.clear();
         let mut iter = self.data.stacks.iter();
-        while let Some(row) = Self::create_slot_row(&mut iter, ctx.clone(), self.data.width as usize, &mut self.all_buttons) {
+        while let Some(row) = Self::create_slot_row(
+            &mut iter,
+            ctx.clone(),
+            self.data.width as usize,
+            &mut self.all_buttons,
+        ) {
             e.add_child(row.to_child());
         }
 
@@ -110,8 +115,14 @@ impl InventoryDisplay {
 
     fn check_events(&mut self, window: &mut Window, game: &Game) {
         let show_drop = self.allowed_actions.can_drop();
-        let show_transfer = self.is_nested.yn(self.allowed_actions.can_transfer_from_player(), self.allowed_actions.can_transfer_to_player());
-        let transfer_type = self.is_nested.yn(ItemAction::TRANSFER_FROM_PLAYER, ItemAction::TRANSFER_TO_PLAYER);
+        let show_transfer = self.is_nested.yn(
+            self.allowed_actions.can_transfer_from_player(),
+            self.allowed_actions.can_transfer_to_player(),
+        );
+        let transfer_type = self.is_nested.yn(
+            ItemAction::TRANSFER_FROM_PLAYER,
+            ItemAction::TRANSFER_TO_PLAYER,
+        );
 
         if let Some(sel) = &mut self.selection {
             if let Some(idx) = sel.check_events() {
@@ -119,7 +130,16 @@ impl InventoryDisplay {
 
                 println!("opened");
 
-                let id = IngredientDisplay::new(window.ui().context(), game, idx as u64, self.data.id, transfer_type, show_transfer, show_drop, stack.clone());
+                let id = IngredientDisplay::new(
+                    window.ui().context(),
+                    game,
+                    idx as u64,
+                    self.data.id,
+                    transfer_type,
+                    show_transfer,
+                    show_drop,
+                    stack.clone(),
+                );
 
                 if let Some(_) = self.item_display.take() {
                     self.item_display_container.remove_all_children();
@@ -140,15 +160,26 @@ impl InventoryDisplay {
         let id = stack.ingredient;
         println!("ingredient id: {id}");
         let no_border = style_expr_empty!("border.resource: none;");
-        let (tex, color, border_style) = if let Some(ing) = CLIENT_INGREDIENT_REG.create_object(id) {
+        let (tex, color, border_style) = if let Some(ing) = CLIENT_INGREDIENT_REG.create_object(id)
+        {
             let (color, border) = if let Some(color) = ing.override_bg {
-                (color, style_expr_empty!("border.resource: color; border.color: @R.color/inv_slot_bg"))
+                (
+                    color,
+                    style_expr_empty!("border.resource: color; border.color: @R.color/inv_slot_bg"),
+                )
             } else {
-                (resolve_resource!("@R.color/inv_slot_bg").unwrap().clone(), no_border.clone())
+                (
+                    resolve_resource!("@R.color/inv_slot_bg").unwrap().clone(),
+                    no_border.clone(),
+                )
             };
             (ing.texture.clone(), color, border)
         } else {
-            (Drawable::missing(), resolve_resource!("@R.color/inv_slot_bg").unwrap().clone(), no_border)
+            (
+                Drawable::missing(),
+                resolve_resource!("@R.color/inv_slot_bg").unwrap().clone(),
+                no_border,
+            )
         };
 
         let mut style = uistyles::SLOT_INNER_STYLE.clone();
@@ -167,7 +198,7 @@ impl InventoryDisplay {
     }
 
     fn create_empty_slot(ctx: UiContext) -> Element {
-    let mut style = uistyles::SLOT_OUTER_STYLE.clone();
+        let mut style = uistyles::SLOT_OUTER_STYLE.clone();
         style.merge_at_set_of(&style_expr_empty!("background.color: @R.color/inv_slot_bg"));
         let btn = ui! {
             <Ui context={ctx}>
@@ -177,9 +208,16 @@ impl InventoryDisplay {
         btn
     }
 
-    fn create_slot_row(iter: &mut Iter<IngredientStack>, ctx: UiContext, slots_across: usize, buttons: &mut Vec<Element>) -> Option<Element> {
+    fn create_slot_row(
+        iter: &mut Iter<IngredientStack>,
+        ctx: UiContext,
+        slots_across: usize,
+        buttons: &mut Vec<Element>,
+    ) -> Option<Element> {
         let mut div_style = uistyles::CLEAR.clone();
-        div_style.merge_at_set_of(&style_expr_empty!("direction: horizontal; padding: none; margin: none;"));
+        div_style.merge_at_set_of(&style_expr_empty!(
+            "direction: horizontal; padding: none; margin: none;"
+        ));
 
         let mut div = ui! {
             <Ui context={ctx.clone()}>
@@ -216,7 +254,7 @@ unsafe impl Sync for InventoryDisplay {}
 
 pub struct CurrentInvDisplay {
     root: Element,
-    elem: Option<InventoryDisplay>
+    elem: Option<InventoryDisplay>,
 }
 
 impl CurrentInvDisplay {

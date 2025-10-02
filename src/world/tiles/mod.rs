@@ -19,13 +19,15 @@ use mvengine::math::vec::Vec4;
 use mvengine::rendering::texture::Texture;
 use mvengine::rendering::{InputVertex, Quad, RenderContext, Transform};
 use mvengine::ui::context::UiResources;
-use mvengine::ui::geometry::SimpleRect;
+use mvengine::ui::geometry::{shape, SimpleRect};
 use mvengine::ui::rendering::WideRenderContext;
 use mvengine::ui::res::OrMissingTexture;
 use mvutils::bytebuffer::ByteBufferExtras;
 use mvutils::unsafe_utils::Unsafe;
 use mvutils::utils::TetrahedronOp;
 use std::ops::Deref;
+use mvengine::ui::geometry::shape::{shapes, Shape};
+use mvutils::lazy;
 
 pub trait TileDraw {
     fn draw(
@@ -63,10 +65,7 @@ impl LoadedClientTile {
 }
 
 impl LoadedClientTile {
-    pub fn from_server_tile(
-        server_tile: ToClientObject,
-        is_terrain: bool,
-    ) -> Option<Self> {
+    pub fn from_server_tile(server_tile: ToClientObject, is_terrain: bool) -> Option<Self> {
         let orientation = server_tile.orientation;
         let state = server_tile.state;
 
@@ -76,9 +75,7 @@ impl LoadedClientTile {
             if server_tile.id < 1 {
                 return None;
             }
-            if let Some(template) =
-                CLIENT_TILE_REG.create_object(server_tile.id as usize - 1)
-            {
+            if let Some(template) = CLIENT_TILE_REG.create_object(server_tile.id as usize - 1) {
                 let (drawable, state) = if let Some(mut st) = template.state {
                     if !state.is_empty() {
                         let mut buf = ByteBuffer::from_vec_le(state);
@@ -148,6 +145,60 @@ impl TileDraw for LoadedClientTile {
                 tile_size,
                 y as f32,
             );
+        }
+    }
+}
+
+lazy! {
+    pub static BC_HRNZ: RgbColor = RgbColor::red();
+    pub static BC_VERT: RgbColor = RgbColor::green();
+    pub static BC_CORNERS: RgbColor = RgbColor::blue();
+}
+pub static TERRAIN_TRANSITION_INSET: i32 = 5;
+
+impl LoadedClientTile {
+    pub fn draw_terrain(
+        &self,
+        ctx: &mut impl WideRenderContext,
+        tile_size: i32,
+        pos: &TilePos,
+        orientation: Orientation,
+        view_area: &SimpleRect,
+        z: i32,
+    ) {
+        //for terrain draw the colored borders
+        if self.id != 0 {
+            let i = TERRAIN_TRANSITION_INSET;
+            let (x, y) = drawutils::get_screen_pos(view_area, pos.to_unit(), tile_size);
+            let c1 = shapes::rectangle0(x, y, i, i);
+            let c2 = shapes::rectangle0(x, y + tile_size - i, i, i);
+            let c3 = shapes::rectangle0(x + tile_size - i, y + tile_size - i, i, i);
+            let c4 = shapes::rectangle0(x + tile_size - i, y, i, i);
+
+            let l = shapes::rectangle0(x, y + i, i, tile_size - i * 2);
+            let r = shapes::rectangle0(x + tile_size - i, y + i, i, tile_size - i * 2);
+            let t = shapes::rectangle0(x + i, y + tile_size - i, tile_size - i * 2, i);
+            let b = shapes::rectangle0(x + i, y, tile_size - i * 2, i);
+
+            fn draw_shape(ctx: &mut impl RenderContext, shape: Shape, color: &RgbColor) {
+                shape.draw(ctx, |_s| {
+                    _s.color = color.as_vec4();
+                });
+            }
+
+            draw_shape(ctx, c1, &BC_CORNERS);
+            draw_shape(ctx, c2, &BC_CORNERS);
+            draw_shape(ctx, c3, &BC_CORNERS);
+            draw_shape(ctx, c4, &BC_CORNERS);
+
+            draw_shape(ctx, l, &BC_VERT);
+            draw_shape(ctx, r, &BC_VERT);
+
+            draw_shape(ctx, t, &BC_HRNZ);
+            draw_shape(ctx, b, &BC_HRNZ);
+
+            let new_size = tile_size - i * 2;
+            drawutils::rect(ctx, x + i, y + i, new_size, new_size, Fill::Drawable(self.texture.clone(), orientation), z as f32);
         }
     }
 }

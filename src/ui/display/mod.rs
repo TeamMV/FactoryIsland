@@ -1,6 +1,6 @@
 pub mod chat;
-pub mod inventory;
 pub mod ingredient;
+pub mod inventory;
 
 use crate::world::tiles::impls::CLIENT_TILE_REG;
 use api::server::packets::common::TileKind;
@@ -12,11 +12,11 @@ use mvengine::ui::elements::child::ToChildFromIterator;
 use mvengine::ui::elements::events::UiClickAction;
 use mvengine::ui::elements::prelude::*;
 use mvengine::ui::elements::Element;
+use mvengine::ui::layouts::uniqueselect::UniqueSelectLayout;
 use mvengine::ui::styles::enums::BackgroundRes;
 use mvengine::ui::styles::{UiStyle, UiValue, EMPTY_STYLE};
 use mvengine::window::Window;
 use mvengine::{expect_element_by_id, modify_style};
-use mvengine::ui::layouts::uniqueselect::UniqueSelectLayout;
 use mvengine_proc::style_expr;
 use mvengine_proc::ui;
 use mvutils::lazy;
@@ -116,9 +116,7 @@ impl TileSelection {
     }
 
     pub fn open(&self, window: &mut Window, mut parent: Element) {
-        parent
-            .get_mut()
-            .add_child(self.root.clone().to_child());
+        parent.get_mut().add_child(self.root.clone().to_child());
     }
 
     pub fn close(&mut self, window: &mut Window) {

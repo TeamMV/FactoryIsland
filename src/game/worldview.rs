@@ -7,6 +7,7 @@ use crate::player::ClientPlayer;
 use crate::rendering::WorldShaders;
 use crate::res::R;
 use crate::ui::display::chat::Chat;
+use crate::ui::display::inventory::{CurrentInvDisplay, InventoryDisplay};
 use crate::ui::display::TileSelection;
 use crate::ui::manager::{GameUiManager, UI_ESCAPE_SCREEN};
 use crate::world::tiles::impls::CLIENT_TILE_REG;
@@ -40,7 +41,7 @@ use mvutils::hashers::U64IdentityHasher;
 use mvutils::thread::ThreadSafe;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
-use crate::ui::display::inventory::{CurrentInvDisplay, InventoryDisplay};
+use crate::world::tiles::TERRAIN_TRANSITION_INSET;
 
 pub type RP = RenderingPipeline<OpenGLRenderer>;
 
@@ -89,12 +90,14 @@ impl WorldView {
         world_pipeline.create_post(window);
         //for custom blend shader
         world_pipeline.use_custom_backbuffer(window);
-        let [ssao, clouds, overlay, overlay_blend] = [
+        let [ssao, trns, clouds, overlay, overlay_blend] = [
             shaders.ssao,
+            shaders.trns,
             shaders.clouds,
             shaders.overlay,
             shaders.overlay_blend,
         ];
+        world_pipeline.add_post_step(trns);
         world_pipeline.add_post_step(ssao);
         world_pipeline.add_post_step(clouds);
 
@@ -136,15 +139,12 @@ impl WorldView {
     }
 
     pub fn open(&mut self, window: &mut Window) {
-        self.tile_selection
-            .open(window, self.click_area.clone());
+        self.tile_selection.open(window, self.click_area.clone());
         window.ui_mut().add_root(self.click_area.clone());
     }
 
     pub fn close(&mut self, window: &mut Window) {
-        window
-            .ui_mut()
-            .remove_root(self.click_area.clone());
+        window.ui_mut().remove_root(self.click_area.clone());
     }
 
     pub fn resize(&mut self, window: &Window) {
@@ -194,6 +194,11 @@ impl WorldView {
         //draw raw world
         self.world_pipeline.advance(window, |_| {});
 
+        //terrain transition
+        self.world_pipeline.advance(window, |s| {
+            s.uniform_1f("SIZE", TERRAIN_TRANSITION_INSET as f32);
+        });
+        
         //draw ssao
         if *settings.ssao_shader.read() {
             self.world_pipeline.advance(window, |_| {});
@@ -303,11 +308,8 @@ impl WorldView {
         if self.click_area.was_left_clicked() {
             let screen_pos = (window.input.mouse_x, window.input.mouse_y);
             if let Some(tile) = self.tile_selection.selected_tile() {
-                let pos = TilePos::from_screen(
-                    screen_pos,
-                    &self.player.camera.view_area,
-                    self.tile_size,
-                );
+                let pos =
+                    TilePos::from_screen(screen_pos, &self.player.camera.view_area, self.tile_size);
                 if pos.distance_from(&self.player) <= self.player.reach {
                     self.world.set_ghost_block(&pos, *tile, self.orientation);
                     client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
@@ -317,11 +319,8 @@ impl WorldView {
                     }));
                 }
             } else {
-                let pos = TilePos::from_screen(
-                    screen_pos,
-                    &self.player.camera.view_area,
-                    self.tile_size,
-                );
+                let pos =
+                    TilePos::from_screen(screen_pos, &self.player.camera.view_area, self.tile_size);
                 if pos.distance_from(&self.player) <= self.player.reach {
                     self.world.set_ghost_block(&pos, 0, self.orientation);
                     client.send(ServerBoundPacket::TileSet(TileSetFromClientPacket {
@@ -350,7 +349,12 @@ impl WorldView {
         }
     }
 
-    pub fn check_window_packet(&mut self, packet: ClientBoundPacket, window: &mut Window, game: &Game) {
+    pub fn check_window_packet(
+        &mut self,
+        packet: ClientBoundPacket,
+        window: &mut Window,
+        game: &Game,
+    ) {
         match packet {
             ClientBoundPacket::InventoryDataPacket(packet) => {
                 let mut inv = InventoryDisplay::new(packet, window.ui().context());

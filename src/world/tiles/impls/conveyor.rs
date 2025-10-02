@@ -1,10 +1,10 @@
 use crate::res::R;
 use crate::world::tiles::impls::ClientStateTile;
+use api::ingredients::IngredientStack;
 use bytebuffer::ByteBuffer;
 use mvengine::graphics::Drawable;
 use mvutils::save::Savable;
 use mvutils::{lazy, Savable};
-use api::ingredients::IngredientStack;
 
 lazy! {
     pub static BASE: Drawable = Drawable::TileSet(R.tileset.conveyor, R.tile.conveyor.base);

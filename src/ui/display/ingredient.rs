@@ -37,8 +37,16 @@ lazy! {
 }
 
 impl IngredientDisplay {
-    pub fn new(ctx: UiContext, game: &Game, item_idx: u64, inv_idx: u64, transfer_action: ItemAction, transferable: bool, droppable: bool, item_in_question: IngredientStack) -> Self {
-
+    pub fn new(
+        ctx: UiContext,
+        game: &Game,
+        item_idx: u64,
+        inv_idx: u64,
+        transfer_action: ItemAction,
+        transferable: bool,
+        droppable: bool,
+        item_in_question: IngredientStack,
+    ) -> Self {
         let container = Self::create_ui(ctx, &item_in_question, game, transferable, droppable);
 
         Self {
@@ -53,8 +61,13 @@ impl IngredientDisplay {
         }
     }
 
-    fn create_ui(ctx: UiContext, item_in_question: &IngredientStack, game: &Game, transfer: bool, droppable: bool) -> Element {
-
+    fn create_ui(
+        ctx: UiContext,
+        item_in_question: &IngredientStack,
+        game: &Game,
+        transfer: bool,
+        droppable: bool,
+    ) -> Element {
         let mut meta_cont_style = uistyles::V_LAYOUT.clone();
         //idk max what to put here
         meta_cont_style.merge_at_set_of(&style_expr_empty!("height.max: 6cm;"));
@@ -65,7 +78,9 @@ impl IngredientDisplay {
         };
 
         let mut outer_style = uistyles::V_LAYOUT.clone();
-        outer_style.merge_at_set_of(&style_expr_empty!("background.resource: color; background.color: @R.color/inv_bg;"));
+        outer_style.merge_at_set_of(&style_expr_empty!(
+            "background.resource: color; background.color: @R.color/inv_bg;"
+        ));
 
         println!("create_ui");
 
@@ -94,13 +109,17 @@ impl IngredientDisplay {
     }
 
     fn create_meta_field_ui(ctx: UiContext, meta_field: &MetaField, game: &Game) -> Element {
-        let display_name = game.language.maybe_lookup(&format!("ingredient.display.meta.{}", meta_field.key));
+        let display_name = game
+            .language
+            .maybe_lookup(&format!("ingredient.display.meta.{}", meta_field.key));
         let entry_value = meta_field.to_string();
 
         println!("create field: {display_name} = {entry_value}");
 
         let mut entry_style = CLEAR_PRESET.clone();
-        entry_style.merge_at_set_of(&style_expr_empty!("margin: none; overflow_x: never; padding.bottom: 1bf"));
+        entry_style.merge_at_set_of(&style_expr_empty!(
+            "margin: none; overflow_x: never; padding.bottom: 1bf"
+        ));
 
         let mut div_style = H_LAYOUT.clone();
         div_style.merge_at_set_of(&style_expr_empty!("width: 50%"));
@@ -114,9 +133,7 @@ impl IngredientDisplay {
         }
     }
 
-    pub fn check_events(&mut self, window: &mut Window, game: &Game) {
-
-    }
+    pub fn check_events(&mut self, window: &mut Window, game: &Game) {}
 
     pub fn container(&self) -> &Element {
         &self.container

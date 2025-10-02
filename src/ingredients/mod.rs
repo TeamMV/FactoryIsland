@@ -21,21 +21,27 @@ lazy! {
 pub struct ClientIngredient {
     pub id: usize,
     pub texture: Drawable,
-    pub override_bg: Option<RgbColor>
+    pub override_bg: Option<RgbColor>,
 }
 
 pub struct ClientIngredientCreateInfo {
     pub texture: Drawable,
-    pub override_bg: Option<RgbColor>
+    pub override_bg: Option<RgbColor>,
 }
 
 impl ClientIngredientCreateInfo {
     pub fn new(texture: Drawable) -> Self {
-        Self { texture, override_bg: None }
+        Self {
+            texture,
+            override_bg: None,
+        }
     }
 
     pub fn with_custom_background(texture: Drawable, override_bg: RgbColor) -> Self {
-        Self { texture, override_bg: Some(override_bg) }
+        Self {
+            texture,
+            override_bg: Some(override_bg),
+        }
     }
 }
 
@@ -43,12 +49,18 @@ impl Registerable for ClientIngredient {
     type CreateInfo = ClientIngredientCreateInfo;
 
     fn with_id(id: usize, info: Self::CreateInfo) -> Self {
-        Self { id, texture: info.texture, override_bg: info.override_bg }
+        Self {
+            id,
+            texture: info.texture,
+            override_bg: info.override_bg,
+        }
     }
 }
 
 pub fn register_ingredients() {
-    CLIENT_INGREDIENT_REG.register(ClientIngredientCreateInfo::new(Drawable::Texture(R.texture.ingredient_stone)));
+    CLIENT_INGREDIENT_REG.register(ClientIngredientCreateInfo::new(Drawable::Texture(
+        R.texture.ingredient_stone,
+    )));
 }
 
 pub struct LoadedClientIngredient {

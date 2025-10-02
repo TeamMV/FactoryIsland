@@ -2,6 +2,9 @@ use crate::gameloop::GameHandler;
 use crate::ui::manager::UI_MAIN_SCREEN;
 use crate::ui::GameUiCallbacks;
 use crate::uistyles;
+use api::inventory::InventoryOwner;
+use api::server::packets::inventory::InventoryOpenPacket;
+use api::server::ServerBoundPacket;
 use mvengine::color::RgbColor;
 use mvengine::net::DisconnectReason;
 use mvengine::ui::elements::prelude::*;
@@ -12,9 +15,6 @@ use mvengine::window::Window;
 use mvengine::{expect_element_by_id, modify_style};
 use mvengine_proc::ui;
 use std::any::Any;
-use api::inventory::InventoryOwner;
-use api::server::packets::inventory::InventoryOpenPacket;
-use api::server::ServerBoundPacket;
 
 pub struct EscapeScreen {
     elem: Element,
@@ -56,7 +56,7 @@ impl EscapeScreen {
             elem,
             quit_btn,
             back_btn,
-            settings_btn
+            settings_btn,
         }
     }
 }
@@ -72,9 +72,9 @@ impl GameUiCallbacks for EscapeScreen {
         "escape"
     }
 
-    fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {        
+    fn check_ui_events(&mut self, window: &mut Window, game_handler: &mut GameHandler) {
         if self.back_btn.was_left_clicked() {
-           game_handler.ui_manager.close_all(window); 
+            game_handler.ui_manager.close_all(window);
         };
 
         if self.settings_btn.was_left_clicked() {
@@ -87,7 +87,7 @@ impl GameUiCallbacks for EscapeScreen {
                 ));
             }
         }
-        
+
         if self.quit_btn.was_left_clicked() {
             if let Some(client) = &mut game_handler.client {
                 client.disconnect(DisconnectReason::Disconnected);
