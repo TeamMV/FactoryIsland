@@ -41,7 +41,6 @@ use mvutils::hashers::U64IdentityHasher;
 use mvutils::thread::ThreadSafe;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
-use crate::world::tiles::TERRAIN_TRANSITION_INSET;
 
 pub type RP = RenderingPipeline<OpenGLRenderer>;
 
@@ -98,8 +97,10 @@ impl WorldView {
             shaders.overlay_blend,
         ];
         world_pipeline.add_post_step(trns);
+        world_pipeline.add_geometry_step();
         world_pipeline.add_post_step(ssao);
         world_pipeline.add_post_step(clouds);
+        world_pipeline.use_custom_blend_shader(overlay_blend.clone());
 
         let player_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
         let mut overlay_pipeline = RenderingPipeline::new_default_opengl(window).unwrap();
@@ -184,7 +185,7 @@ impl WorldView {
         OpenGLRenderer::enable_depth_test();
 
         trace!("Beginning of draw");
-        self.world.draw(
+        self.world.draw_terrain(
             &mut self.world_pipeline,
             &self.player.camera.view_area,
             self.tile_size,
@@ -200,8 +201,17 @@ impl WorldView {
             let cam = Vec2::from_i32s(self.player.camera.pos);
             s.uniform_2fv("CAM", &cam);
             s.uniform_texture(R.resolve_texture(R.texture.uv_trans).unwrap(), "OFFSETS");
+            s.uniform_1f("FRAME", self.frame as f32);
         });
-        
+
+        self.world.draw_tiles(
+            &mut self.world_pipeline,
+            &self.player.camera.view_area,
+            self.tile_size,
+        );
+
+        self.world_pipeline.advance(window, |_| {});
+
         //draw ssao
         if *settings.ssao_shader.read() {
             self.world_pipeline.advance(window, |_| {});

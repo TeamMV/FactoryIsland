@@ -7,7 +7,7 @@ use crate::world::tiles::impls::CLIENT_TILE_REG;
 use api::world::tiles::pos::TilePos;
 use api::world::{resolve_unit, SingleTileUnit};
 use mvengine::color::RgbColor;
-use mvengine::rendering::RenderContext;
+use mvengine::rendering::{OpenGLRenderer, RenderContext};
 use mvengine::ui::context::UiResources;
 use mvengine::ui::geometry::shape::shapes;
 use mvengine::window::Window;
@@ -34,6 +34,7 @@ pub fn draw_overlay(view: &mut WorldView, window: &Window, settings: &GameSettin
                 );
                 let reach = (player.reach * view.tile_size as SingleTileUnit) as i32;
                 let circle = shapes::circle0(px, py, reach, 30);
+                OpenGLRenderer::blend();
                 circle.draw(pipeline, |v| {
                     v.color = RgbColor::green().alpha(100).as_vec4();
                 });

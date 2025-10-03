@@ -109,7 +109,7 @@ impl ClientWorld {
         self.loaded.clear();
     }
 
-    pub fn draw(
+    pub fn draw_terrain(
         &self,
         renderer: &mut impl WideRenderContext,
         view_area: &SimpleRect,
@@ -122,6 +122,7 @@ impl ClientWorld {
                 CHUNK_SIZE * tile_size,
                 CHUNK_SIZE * tile_size,
             );
+            let terrain_height = 105;
             if view_area.intersects(&chunk_area) {
                 for i in 0..chunk.terrain.len() {
                     let terrain = &chunk.terrain[i];
@@ -134,8 +135,7 @@ impl ClientWorld {
                         tile_size,
                     );
                     if view_area.intersects(&tile_rect) {
-                        let terrain_height = 105;
-                        terrain.draw(
+                        terrain.draw_terrain(
                             renderer,
                             tile_size,
                             &pos,
@@ -143,6 +143,36 @@ impl ClientWorld {
                             view_area,
                             terrain_height,
                         );
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn draw_tiles(
+        &self,
+        renderer: &mut impl WideRenderContext,
+        view_area: &SimpleRect,
+        tile_size: i32,
+    ) {
+        for (pos, chunk) in self.loaded.iter() {
+            let chunk_area = SimpleRect::new(
+                pos.0 * CHUNK_SIZE * tile_size,
+                pos.1 * CHUNK_SIZE * tile_size,
+                CHUNK_SIZE * tile_size,
+                CHUNK_SIZE * tile_size,
+            );
+            let terrain_height = 105;
+            if view_area.intersects(&chunk_area) {
+                for i in 0..chunk.terrain.len() {
+                    let pos = Chunk::position_from_index(pos, i);
+                    let tile_rect = SimpleRect::new(
+                        pos.raw.0 * tile_size,
+                        pos.raw.1 * tile_size,
+                        tile_size,
+                        tile_size,
+                    );
+                    if view_area.intersects(&tile_rect) {
                         if self.is_multitile_at(&pos) {
                             continue;
                         }
@@ -164,8 +194,6 @@ impl ClientWorld {
                     }
                 }
                 for multitile in &chunk.multitiles {
-                    let terrain = &chunk.terrain[Chunk::get_index(&multitile.pos)];
-                    let terrain_height = 1000 - terrain.id as i32 * 100;
                     let tex = if let Some(client_mt) = &multitile.client_multi_tile {
                         client_mt.get_relevant_texture(multitile.extent.0 > multitile.extent.1)
                     } else {

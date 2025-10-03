@@ -149,56 +149,37 @@ impl TileDraw for LoadedClientTile {
     }
 }
 
-lazy! {
-    pub static BC_HRNZ: RgbColor = RgbColor::red();
-    pub static BC_VERT: RgbColor = RgbColor::green();
-    pub static BC_CORNERS: RgbColor = RgbColor::blue();
-}
-pub static TERRAIN_TRANSITION_INSET: i32 = 5;
-
 impl LoadedClientTile {
-    pub fn draw_with_borders(
+    pub fn draw_terrain(
         &self,
         ctx: &mut impl WideRenderContext,
         tile_size: i32,
         pos: &TilePos,
         orientation: Orientation,
         view_area: &SimpleRect,
-        z: i32,
+        y: i32,
     ) {
-        //for terrain draw the colored borders
         if self.id != 0 {
-            let i = TERRAIN_TRANSITION_INSET;
-            let (x, y) = drawutils::get_screen_pos(view_area, pos.to_unit(), tile_size);
-            let c1 = shapes::rectangle0(x, y, i, i);
-            let c2 = shapes::rectangle0(x, y + tile_size - i, i, i);
-            let c3 = shapes::rectangle0(x + tile_size - i, y + tile_size - i, i, i);
-            let c4 = shapes::rectangle0(x + tile_size - i, y, i, i);
-
-            let l = shapes::rectangle0(x, y + i, i, tile_size - i * 2);
-            let r = shapes::rectangle0(x + tile_size - i, y + i, i, tile_size - i * 2);
-            let t = shapes::rectangle0(x + i, y + tile_size - i, tile_size - i * 2, i);
-            let b = shapes::rectangle0(x + i, y, tile_size - i * 2, i);
-
-            fn draw_shape(ctx: &mut impl RenderContext, shape: Shape, color: &RgbColor) {
-                shape.draw(ctx, |_s| {
-                    _s.color = color.as_vec4();
-                });
+            //This will be the most hacky fix that requires all the duct tape on the planet to work
+            //but i cannot find another way
+            //this offset is also applied in the shader to correct the shifted uv lmao i cant
+            //oh and 0.25 is hardcoded to the texture lmao, like other textures wont work
+            let correction_offset = (tile_size as f32 * 0.25 * 0.5) as i32;
+            
+            let x = pos.raw.0 * tile_size + correction_offset;
+            let z = pos.raw.1 * tile_size + correction_offset;
+            let rect = SimpleRect::new(x, z, tile_size, tile_size);
+            if view_area.intersects(&rect) {
+                drawutils::rect(
+                    ctx,
+                    rect.x - view_area.x,
+                    rect.y - view_area.y,
+                    rect.width,
+                    rect.height,
+                    Fill::Drawable(self.texture.clone(), orientation),
+                    y as f32,
+                );
             }
-
-            draw_shape(ctx, c1, &BC_CORNERS);
-            draw_shape(ctx, c2, &BC_CORNERS);
-            draw_shape(ctx, c3, &BC_CORNERS);
-            draw_shape(ctx, c4, &BC_CORNERS);
-
-            draw_shape(ctx, l, &BC_VERT);
-            draw_shape(ctx, r, &BC_VERT);
-
-            draw_shape(ctx, t, &BC_HRNZ);
-            draw_shape(ctx, b, &BC_HRNZ);
-
-            let new_size = tile_size - i * 2;
-            drawutils::rect(ctx, x + i, y + i, new_size, new_size, Fill::Drawable(self.texture.clone(), orientation), z as f32);
         }
     }
 }
